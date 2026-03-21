@@ -374,6 +374,38 @@ Your agents earn money by doing what they're already good at. MultiHead handles 
 
 ---
 
+### 9. Resurrect Old Code
+
+You have a repo from two years ago — a sentiment analysis pipeline you built for a client. It works, but nobody's using it. Point MultiHead at it.
+
+```bash
+# Point MultiHead at the old repo
+export MULTIHEAD_PROJECT_ROOTS="~/repos/old-sentiment-pipeline"
+
+# Night Shift analyzes everything
+multihead nightshift run --head openai-gpt41-nano --batch
+```
+
+```
+>> behavioral_analysis   OK (8.4s)  — 1 repo scanned
+>> claim_extraction      OK (6.1s)  — 247 claims
+>> solver_discovery      OK (3.2s)  — 2 capabilities found:
+     • text_classification (sentiment_model.py — 94.2% accuracy on SST-2)
+     • text_preprocessing (clean_pipeline.py — handles HTML, Unicode, emoji)
+```
+
+MultiHead read the code, found trained models and working pipelines, measured their accuracy from test results, and registered them as capabilities. Now publish them:
+
+```bash
+multihead marketplace publish \
+  --capability "text_classification" \
+  --price 0.01
+```
+
+Your forgotten repo is now a running service on the BotVibes marketplace. When someone needs sentiment analysis, your old code handles it — and you get paid.
+
+---
+
 ## Quick Start (5 minutes)
 
 ```bash
