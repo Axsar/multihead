@@ -1,0 +1,174 @@
+# Phase 6: Marketplace Task Delegation via RFQ
+# Example: Delegate large-scale object detection to BotVibes marketplace
+
+goal: "Process 10,000 images via marketplace delegation"
+
+inputs:
+  image_paths: []  # List of 10k image paths
+  task_type: "object_detection"
+  max_budget: 500.00  # USD
+  deadline_hours: 12.0
+  privacy_level: "internal"  # encrypted delegation
+
+steps:
+  # Step 1: Create RFQ and publish to marketplace
+  - name: create_rfq
+    task_types:
+      - rfq_creation
+      - marketplace_delegation
+    budget:
+      max_cost_per_step: 0.05  # $0.05 per image max
+      max_total_cost: 500.00   # $500 total max
+      max_total_time_s: 43200  # 12 hours
+    privacy:
+      data_sensitivity: internal
+      require_encryption: true
+    prompt_template: |
+      Create RFQ for {task_type} on {len(image_paths)} images.
+
+      Budget:
+      - Max per-image: ${max_cost_per_step}
+      - Max total: ${max_budget}
+
+      Requirements:
+      - Deadline: {deadline_hours} hours
+      - Privacy: {privacy_level} (encrypted)
+      - Quality: min mAP 0.85
+
+      Publish to marketplace with 1-hour bidding window.
+
+  # Step 2: Collect and score bids
+  - name: evaluate_bids
+    task_types:
+      - bid_evaluation
+      - decision_making
+    input_refs: [create_rfq]
+    prompt_template: |
+      RFQ {create_rfq.rfq_id} received {len(create_rfq.bids)} bids.
+
+      Score bids based on:
+      - Price (40%): Lower is better
+      - Quality guarantee (30%): Higher mAP is better
+      - Reputation (20%): Higher success rate
+      - Speed (10%): Faster completion
+
+      Rank bids and return top 3.
+
+  # Step 3: Select best bid
+  - name: select_provider
+    task_types:
+      - provider_selection
+    input_refs: [evaluate_bids]
+    prompt_template: |
+      Select best provider from ranked bids:
+      {evaluate_bids.top_3}
+
+      Criteria:
+      - Within budget: ${max_budget}
+      - Meets deadline: {deadline_hours}h
+      - Quality guarantee: mAP >= 0.85
+      - Supports encryption (required for INTERNAL data)
+
+      Return: selected_provider_id
+
+  # Step 4: Delegate task to marketplace
+  - name: delegate_to_marketplace
+    task_types:
+      - task_delegation
+      - acp_task_creation
+    input_refs: [select_provider]
+    privacy:
+      data_sensitivity: internal
+      require_encryption: true
+    prompt_template: |
+      Delegate task to provider {select_provider.provider_id}:
+
+      1. Encrypt image data (ephemeral key pair)
+      2. Create ACP task:
+         - capability: "object_detection"
+         - target_agent_id: {select_provider.provider_id}
+         - payload: encrypted image batch
+         - metadata: RFQ {create_rfq.rfq_id}
+
+      3. Monitor execution:
+         - Track progress
+         - Check heartbeats
+         - Timeout: {deadline_hours}h
+
+      4. Receive results (encrypted)
+      5. Decrypt results
+
+  # Step 5: Quality verification
+  - name: verify_quality
+    task_types:
+      - quality_verification
+      - sampling
+    input_refs: [delegate_to_marketplace]
+    prompt_template: |
+      Verify quality of marketplace results:
+
+      1. Random sample 5% of results (min 100 images)
+      2. Run local ground truth detection
+      3. Compare:
+         - mAP score
+         - Precision/recall
+         - Box IOU
+
+      4. Compute average quality
+      5. Check threshold: >= 0.85
+
+      If quality < threshold:
+        - Reject results
+        - Request re-work or refund
+        - Update provider reputation (negative)
+
+      If quality OK:
+        - Accept results
+        - Record payment
+        - Update provider reputation (positive)
+
+  # Step 6: Record feedback
+  - name: update_reputation
+    task_types:
+      - feedback_recording
+      - reputation_update
+    input_refs: [verify_quality]
+    prompt_template: |
+      Update provider reputation:
+
+      Provider: {select_provider.provider_id}
+      RFQ: {create_rfq.rfq_id}
+
+      Results:
+      - Quality: {verify_quality.average_quality}
+      - On time: {verify_quality.completed_within_deadline}
+      - Cost: ${verify_quality.actual_cost}
+
+      Reputation delta:
+      - Quality score weight: 60%
+      - Timeliness weight: 20%
+      - Cost accuracy weight: 20%
+
+      Record to registry for future provider selection.
+
+  # Step 7: Return final results
+  - name: finalize
+    task_types:
+      - data_aggregation
+    input_refs: [delegate_to_marketplace, verify_quality]
+    prompt_template: |
+      Task complete!
+
+      Summary:
+      - Processed: {len(image_paths)} images
+      - Provider: {select_provider.provider_name}
+      - Cost: ${verify_quality.actual_cost} (budget: ${max_budget})
+      - Time: {verify_quality.actual_time_hours}h (deadline: {deadline_hours}h)
+      - Quality: {verify_quality.average_quality} mAP
+
+      Savings:
+      - Local cost: $1,200 (24h GPU time @ $50/h)
+      - Marketplace cost: ${verify_quality.actual_cost}
+      - Saved: ${1200 - verify_quality.actual_cost} ({(1200 - verify_quality.actual_cost)/1200 * 100:.1f}%)
+
+      Return: detection_results

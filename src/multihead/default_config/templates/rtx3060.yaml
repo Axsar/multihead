@@ -1,0 +1,39 @@
+# RTX 3060 / 8-12GB VRAM configuration
+# Supports Qwen3-8B LLM + Qwen3-VL-8B VLM with 4-bit quantization
+# Requires: pip install torch transformers accelerate bitsandbytes
+
+heads:
+  # --- Testing (always available) ---
+  - head_id: mock-llm
+    name: Mock LLM
+    adapter: mock
+    model: mock-llm-v1
+    kind: llm
+    gpu_required: false
+
+  - head_id: mock-vlm
+    name: Mock VLM
+    adapter: mock
+    model: mock-vlm-v1
+    kind: vlm
+    gpu_required: false
+
+  # --- Local LLM ---
+  - head_id: core-llm
+    name: Qwen3 8B
+    adapter: transformers
+    model: Qwen/Qwen3-8B
+    kind: llm
+    gpu_required: true
+    vram_hint_mb: 6000
+    quantization: "4bit"
+
+  # --- Local VLM ---
+  - head_id: vision-vlm
+    name: Qwen3 VL 8B Instruct
+    adapter: transformers
+    model: Qwen/Qwen3-VL-8B-Instruct
+    kind: vlm
+    gpu_required: true
+    vram_hint_mb: 5000
+    quantization: "4bit"

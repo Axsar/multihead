@@ -1,0 +1,64 @@
+# Text Analysis Recipe: Summarize + Extract entities from text input
+# Proves: real LLM head (claude-sonnet), multi-step pipeline, artifact flow
+#
+# Usage: multihead run text-analyze --input /path/to/text/files/
+
+goal: "Analyze text files and produce a structured summary with key entities"
+
+inputs:
+  input_path: ""
+
+budgets:
+  max_seconds: 120
+  max_tokens: 20000
+
+steps:
+  - name: summarize
+    head_id: claude-sonnet
+    prompt_template: |
+      You are a text analysis assistant. Summarize the following content
+      in 3-5 bullet points. Focus on the key facts and themes.
+
+      Goal: {goal}
+      Input path: {input_path}
+
+      Return a JSON object with:
+      {{"summary_bullets": ["bullet1", "bullet2", ...], "main_topic": "topic"}}
+
+      Return ONLY valid JSON.
+    input_refs: []
+    retry_policy:
+      max_attempts: 2
+      backoff_ms: 1000
+
+  - name: extract_entities
+    head_id: claude-sonnet
+    prompt_template: |
+      Given this summary of the analyzed content:
+
+      {previous_step_output}
+
+      Now extract all named entities (people, organizations, technologies,
+      locations) mentioned or implied. Return a JSON object:
+      {{"entities": [{{"name": "...", "type": "person|org|tech|location", "relevance": "high|medium|low"}}]}}
+
+      Return ONLY valid JSON.
+    input_refs:
+      - summarize
+
+  - name: final_report
+    head_id: claude-sonnet
+    prompt_template: |
+      Compile a final analysis report from these results:
+
+      Summary & entities:
+      {previous_step_output}
+
+      Write a brief markdown report with:
+      - Overview (2-3 sentences)
+      - Key entities table
+      - Recommendations for further analysis
+
+      Return the markdown report.
+    input_refs:
+      - extract_entities

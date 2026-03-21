@@ -1,0 +1,34 @@
+# MultiHead dependencies
+# PREFERRED: pip install -e ".[dev]" (uses pyproject.toml)
+# This file is provided as a fallback for pip-only workflows.
+
+# Core dependencies
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.0
+pydantic-settings>=2.0
+httpx>=0.27
+click>=8.0
+pyyaml>=6.0
+rich>=13.0
+python-ulid>=2.0
+aiosqlite>=0.20
+aiofiles>=24.0
+python-multipart>=0.0.9
+python-dotenv>=1.0
+fastmcp>=2.14
+duckduckgo-search>=6.0
+
+# Optional: Mesh discovery
+# zeroconf>=0.131
+
+# Optional: Local GPU models (requires CUDA)
+# torch>=2.0
+# transformers>=4.40
+# accelerate>=0.30
+# bitsandbytes>=0.43
+
+# Development dependencies (optional)
+# pytest>=8.0
+# pytest-asyncio>=0.24
+# pytest-httpx>=0.30

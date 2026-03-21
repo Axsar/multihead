@@ -1,0 +1,68 @@
+# Golden Demo Recipe: Image Folder → Structured Report
+# Proves: head swaps (LLM → VLM → LLM), artifact flow, durable execution
+#
+# Usage: multihead run img2report --input /path/to/images/
+
+goal: "Analyze images and produce a structured report with extracted entities"
+
+inputs:
+  input_path: ""  # Override via CLI --input
+
+budgets:
+  max_seconds: 600
+  max_tokens: 50000
+
+steps:
+  - name: plan_extraction
+    head_id: mock-llm
+    prompt_template: |
+      You are an extraction planner. Given images to analyze, define a JSON schema
+      for the fields we should extract from each image.
+
+      Goal: {goal}
+      Input path: {input_path}
+
+      Output a JSON schema with fields like:
+      - caption: string (1-2 sentence description)
+      - entities: list of detected objects/entities
+      - text_content: any visible text
+      - mood/tone: overall impression
+      - key_details: notable features
+
+      Return ONLY valid JSON.
+    input_refs: []
+    retry_policy:
+      max_attempts: 2
+      backoff_ms: 1000
+
+  - name: vlm_extraction
+    head_id: mock-vlm
+    prompt_template: |
+      Analyze the provided images using this extraction schema:
+
+      {previous_step_output}
+
+      For each image, extract the fields defined in the schema.
+      Return a JSON array of extracted records.
+    input_refs:
+      - plan_extraction
+
+  - name: normalize_report
+    head_id: mock-llm
+    prompt_template: |
+      You have raw VLM extraction results. Normalize them into:
+      1. A clean JSON array (items.json format)
+      2. A human-readable markdown report
+
+      Raw extraction:
+      {previous_step_output}
+
+      Format the report with:
+      - Summary section
+      - Per-image findings
+      - Cross-image patterns
+      - Recommended next steps
+
+      Return the markdown report.
+    input_refs:
+      - vlm_extraction

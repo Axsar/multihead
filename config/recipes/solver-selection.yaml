@@ -1,0 +1,168 @@
+# Phase 5: Meta-Reasoning Solver Selection
+# MultiHead uses itself to decide which solver is best for a task type
+
+goal: "Select best solver for {task_type} using meta-reasoning"
+
+inputs:
+  task_type: "object_detection"  # Task type to evaluate solvers for
+  solver_type: "object_detection"  # Solver type filter
+  test_samples: []  # Optional test data for empirical benchmarking
+  min_candidates: 2  # Minimum candidates to evaluate
+
+steps:
+  # Step 1: Gather candidate solvers from registry
+  - name: gather_candidates
+    task_types:
+      - solver_discovery
+      - data_retrieval
+    prompt_template: |
+      Query the solver registry for all candidates of type "{solver_type}".
+      Filter by:
+      - adoption_status: "adopted" or "candidate"
+      - min_aggregate_score: 0.5
+
+      Return JSON list of candidates with:
+      - solver_id
+      - name
+      - source (huggingface, ollama, botvibes)
+      - benchmark_scores (dict)
+      - estimated_cost
+      - estimated_latency_ms
+
+      Minimum {min_candidates} candidates required.
+
+  # Step 2: Multi-head evaluation via consensus
+  - name: multi_head_evaluation
+    task_types:
+      - reasoning
+      - decision_making
+    input_refs: [gather_candidates]
+    consensus:
+      strategy: WEIGHTED
+      heads:
+        - head_id: qwen-llm
+          weight: 1.0
+          required: true
+        - head_id: openai-gpt4o
+          weight: 1.5
+          required: false
+        - head_id: qwen-vlm
+          weight: 0.8
+          required: false
+      output_schema:
+        type: object
+        required: [rankings, reasoning]
+        properties:
+          rankings:
+            type: array
+            description: "Ordered list of solver_ids from best to worst"
+          reasoning:
+            type: string
+            description: "Explanation of why top solver is best"
+          confidence:
+            type: number
+            description: "Confidence in ranking (0.0-1.0)"
+    prompt_template: |
+      Evaluate these {task_type} solver candidates:
+      {gather_candidates}
+
+      Your task: Rank these solvers from BEST to WORST for {task_type}.
+
+      Consider:
+      1. Benchmark scores (accuracy, mAP, F1)
+      2. Cost per call (prefer cheaper if quality similar)
+      3. Latency (prefer faster if quality similar)
+      4. Source (local > encrypted remote > external)
+      5. Specialization (task-specific models > general)
+
+      Return JSON:
+      {{
+        "rankings": ["solver-id-1", "solver-id-2", ...],
+        "reasoning": "Explain why top solver is best",
+        "confidence": 0.85
+      }}
+
+  # Step 3: Benchmark top candidates (empirical validation)
+  - name: benchmark_top_candidates
+    task_types:
+      - model_benchmarking
+      - empirical_evaluation
+    input_refs: [multi_head_evaluation, gather_candidates]
+    prompt_template: |
+      Take the top 3 solvers from consensus rankings:
+      {multi_head_evaluation.rankings[:3]}
+
+      If test_samples provided:
+        Run each solver on test data: {test_samples}
+        Measure: accuracy, latency, cost
+        Return benchmark results
+
+      Else:
+        Return: "No empirical benchmarking (test_samples empty)"
+
+      Output JSON:
+      {{
+        "benchmarked": true/false,
+        "results": {{
+          "solver-id-1": {{"accuracy": 0.92, "latency_ms": 38}},
+          "solver-id-2": {{"accuracy": 0.89, "latency_ms": 45}}
+        }}
+      }}
+
+  # Step 4: Final selection (synthesize consensus + empirical)
+  - name: final_selection
+    task_types:
+      - decision_making
+      - synthesis
+    input_refs: [multi_head_evaluation, benchmark_top_candidates, gather_candidates]
+    prompt_template: |
+      Synthesize final solver selection for {task_type}.
+
+      Consensus rankings:
+      {multi_head_evaluation.rankings}
+
+      Consensus reasoning:
+      {multi_head_evaluation.reasoning}
+
+      Empirical benchmarks:
+      {benchmark_top_candidates.results}
+
+      Task: Select THE BEST solver and explain why.
+
+      If empirical data available:
+        - Weight empirical results 60%, consensus 40%
+        - Prefer empirically validated winner
+
+      Else:
+        - Use consensus rankings (100% weight)
+
+      Return JSON:
+      {{
+        "selected_solver_id": "best-solver-id",
+        "reasoning": "Final explanation with evidence",
+        "confidence_score": 0.88,
+        "consensus_votes": {{"qwen-llm": "solver-a", "gpt4o": "solver-a"}},
+        "benchmark_scores": {{"accuracy": 0.92, "latency_ms": 38}}
+      }}
+
+      This selection will be recorded as a preference for {task_type}.
+
+  # Step 5: Record preference (persistence)
+  - name: record_preference
+    task_types:
+      - data_persistence
+      - preference_recording
+    input_refs: [final_selection]
+    prompt_template: |
+      Record solver preference to registry:
+
+      Task type: {task_type}
+      Selected solver: {final_selection.selected_solver_id}
+      Reasoning: {final_selection.reasoning}
+      Confidence: {final_selection.confidence_score}
+      Consensus votes: {final_selection.consensus_votes}
+      Benchmark results: {final_selection.benchmark_scores}
+
+      This preference will influence future routing decisions for {task_type}.
+
+      Return: {{"status": "recorded", "preference_id": 123}}

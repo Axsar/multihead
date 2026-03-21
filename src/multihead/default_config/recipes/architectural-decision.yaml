@@ -1,0 +1,192 @@
+# Architectural Decision Validation Recipe
+# Purpose: 7-head consensus on architectural proposals (3 models + 4 domain experts)
+# Usage: multihead run architectural-decision --proposal_text "..." --proposal_claim_id "..."
+
+goal: "Validate architectural proposal using 7-head consensus (models + domain experts)"
+
+inputs:
+  proposal_text: ""
+  proposal_claim_id: ""
+
+budgets:
+  max_seconds: 900
+  max_tokens: 100000
+
+steps:
+  # Step 1: Request expert agent reviews via collaboration scope
+  - name: request_agent_reviews
+    head_id: qwen-llm
+    prompt_template: |
+      Deposit collaboration messages requesting architectural review from 4 expert agents:
+      1. Pipeline Manager - systemic view
+      2. Vertical Layout - coordinate bug experience
+      3. BubbleFill - coordinate bug experience
+      4. Tail Maker - coordinate bug experience
+
+      Proposal claim ID: {proposal_claim_id}
+
+      Each message should ask: "Review claim {proposal_claim_id} - does this Stage 3
+      coordinate standardization proposal solve your bug? Concerns? Suggestions?"
+
+  # Step 2: Multi-model consensus (Qwen + Claude worker + OpenAI)
+  - name: multi_model_critique
+    consensus:
+      heads:
+        # Head 1: Qwen (local, fast)
+        - head_id: qwen-llm
+          prompt_template: |
+            ARCHITECTURAL PROPOSAL REVIEW
+
+            CONTEXT: Processing pipeline has coordinate space mismatches between model output and page resolution.
+            Multiple agents independently hit bugs. Proposal: standardize coordinate spaces at the normalization stage.
+
+            PROPOSAL:
+            {proposal_text}
+
+            TASK: Critique this proposal:
+            1. Does it solve the root cause?
+            2. Risks/downsides?
+            3. What's missing?
+            4. Implementation complexity vs benefit?
+            5. Better alternatives?
+
+            Return JSON:
+            {{
+              "verdict": "approve" | "approve_with_changes" | "reject",
+              "strengths": ["architectural soundness", "..."],
+              "concerns": ["backward compatibility risk", "..."],
+              "suggestions": ["add validation layer first", "..."],
+              "confidence": 0.85,
+              "reasoning": "Brief explanation"
+            }}
+          extract_fields: ["verdict", "concerns", "suggestions", "confidence"]
+          weight: 1.5
+
+        # Head 2: Claude worker (via ACP)
+        - head_id: qwen-llm
+          prompt_template: |
+            [DELEGATE TO CLAUDE WORKER VIA ACP]
+
+            Task: Review architectural proposal for Stage 3 coordinate standardization.
+
+            Proposal claim: {proposal_claim_id}
+
+            Full text: {proposal_text}
+
+            Provide critique focusing on:
+            - Architectural soundness
+            - Implementation risks
+            - Missing considerations
+
+            Return same JSON schema as other reviewers.
+          extract_fields: ["verdict", "concerns", "suggestions"]
+          weight: 2.0
+          required: false  # Don't fail if ACP unavailable
+
+        # Head 3: OpenAI GPT-4o (external validation)
+        - head_id: openai-gpt4o
+          prompt_template: |
+            You are reviewing an architectural proposal for a processing pipeline
+            with multiple stages.
+
+            PROBLEM: Pipeline outputs data in different coordinate spaces causing bugs downstream.
+
+            PROPOSAL:
+            {proposal_text}
+
+            TASK: Provide expert critique:
+            1. Architectural assessment
+            2. Risk analysis
+            3. Suggested improvements
+            4. Alternative approaches to consider
+
+            Return JSON (same schema as other reviewers):
+            {{
+              "verdict": "approve|approve_with_changes|reject",
+              "strengths": [...],
+              "concerns": [...],
+              "suggestions": [...],
+              "confidence": 0.0-1.0,
+              "reasoning": "..."
+            }}
+          extract_fields: ["verdict", "concerns", "suggestions"]
+          weight: 2.0
+          required: false  # Optional until API key provided
+
+      strategy: weighted
+      fail_on_disagreement: false
+      output_schema:
+        type: object
+        properties:
+          verdict:
+            type: string
+            enum: ["approve", "approve_with_changes", "reject"]
+          strengths:
+            type: array
+          concerns:
+            type: array
+          suggestions:
+            type: array
+          confidence:
+            type: number
+          reasoning:
+            type: string
+
+  # Step 3: Collect agent responses from collaboration scope
+  - name: collect_agent_feedback
+    head_id: qwen-llm
+    prompt_template: |
+      Query collaboration scope for responses from:
+      - Pipeline Manager agent
+      - Vertical Layout agent
+      - BubbleFill agent
+      - Tail Maker agent
+
+      Look for messages about claim: {proposal_claim_id}
+
+      Extract their verdicts, concerns, and suggestions.
+
+      Return aggregated JSON with each agent's response.
+
+  # Step 4: Synthesize 7-head consensus
+  - name: synthesize_consensus
+    head_id: qwen-llm
+    prompt_template: |
+      FINAL CONSENSUS SYNTHESIS
+
+      ORIGINAL PROPOSAL: {proposal_text}
+
+      MODEL CRITIQUES (Qwen + Claude + GPT-4o):
+      {multi_model_critique}
+
+      AGENT FEEDBACK (Pipeline/Vertical/BubbleFill/Tail):
+      {collect_agent_feedback}
+
+      TASK: Synthesize 7-head consensus:
+
+      1. VERDICT: Count votes (approve=+1, approve_with_changes=0, reject=-1)
+         - If sum > 3: APPROVED
+         - If sum 0-3: APPROVED WITH CHANGES
+         - If sum < 0: REJECTED
+
+      2. CONSENSUS CONCERNS: Issues raised by 2+ heads
+
+      3. CONSENSUS SUGGESTIONS: Improvements recommended by 2+ heads
+
+      4. UPDATED PROPOSAL: Incorporate consensus suggestions (if approved with changes)
+
+      5. CONFIDENCE: Average confidence from all heads
+
+      6. DISSENTING OPINIONS: Note any head that strongly disagreed and why
+
+      Return final JSON:
+      {{
+        "consensus_verdict": "approved|approved_with_changes|rejected",
+        "vote_count": {{approve: N, approve_with_changes: M, reject: K}},
+        "consensus_concerns": [...],
+        "consensus_suggestions": [...],
+        "updated_proposal": "..." or null,
+        "overall_confidence": 0.0-1.0,
+        "dissenting_opinions": [...],
+        "next_steps": [...]
+      }}

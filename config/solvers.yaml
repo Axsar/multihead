@@ -1,0 +1,134 @@
+solvers:
+- solver_id: mock-llm
+  name: Mock LLM
+  adapter: mock
+  model: mock-llm-v1
+  kind: llm
+  gpu_required: false
+  is_local: true
+  privacy_level: local
+  capabilities:
+    solver_type: llm
+    input_modalities: &id001
+    - text
+    output_modalities: &id002
+    - text
+    - json
+    task_types: &id003
+    - semantic_reasoning
+    - text_generation
+    latency_p50_ms: 200
+    cost_per_call: 0.0
+    accuracy_score: 0.5
+    requires_gpu: false
+    vram_mb: 0
+- solver_id: mock-vlm
+  name: Mock VLM
+  adapter: mock
+  model: mock-vlm-v1
+  kind: vlm
+  gpu_required: false
+  is_local: true
+  privacy_level: local
+  capabilities:
+    solver_type: vlm
+    input_modalities:
+    - text
+    - image
+    output_modalities:
+    - text
+    - json
+    task_types:
+    - visual_reasoning
+    - image_classification
+    latency_p50_ms: 300
+    cost_per_call: 0.0
+    accuracy_score: 0.5
+    requires_gpu: false
+    vram_mb: 0
+- solver_id: core-llm
+  name: Qwen3 8B
+  adapter: transformers
+  model: Qwen/Qwen3-8B
+  kind: llm
+  gpu_required: true
+  is_local: true
+  privacy_level: local
+  vram_hint_mb: 6000
+  quantization: 4bit
+  capabilities:
+    solver_type: llm
+    input_modalities:
+    - text
+    output_modalities:
+    - text
+    - json
+    task_types:
+    - semantic_reasoning
+    - text_generation
+    - classification
+    - summarization
+    - question_answering
+    max_input_tokens: 32768
+    latency_p50_ms: 120
+    cost_per_call: 0.0
+    accuracy_score: 0.71
+    benchmarks:
+      mmlu: 0.71
+      gsm8k: 0.83
+      humaneval: 0.68
+    requires_gpu: true
+    vram_mb: 6000
+- solver_id: vision-vlm
+  name: Qwen3 VL 32B Thinking
+  adapter: transformers
+  model: Qwen/Qwen3-VL-32B-Thinking
+  kind: vlm
+  gpu_required: true
+  is_local: true
+  privacy_level: local
+  vram_hint_mb: 18000
+  quantization: 4bit
+  capabilities:
+    solver_type: vlm
+    input_modalities:
+    - text
+    - image
+    output_modalities:
+    - text
+    - json
+    task_types:
+    - visual_reasoning
+    - complex_image_analysis
+    - image_classification
+    - image_description
+    - visual_question_answering
+    - ocr
+    - spatial_reasoning
+    max_input_tokens: 32768
+    latency_p50_ms: 400
+    cost_per_call: 0.0
+    accuracy_score: 0.94
+    benchmarks:
+      mmmu: 0.78
+      docvqa: 0.91
+    requires_gpu: true
+    vram_mb: 18000
+- solver_id: claude-sonnet
+  name: Claude Sonnet
+  adapter: claude
+  model: claude-sonnet-4-6
+  kind: llm
+  gpu_required: false
+  is_local: true
+  privacy_level: encrypted
+  capabilities:
+    solver_type: llm
+    input_modalities: *id001
+    output_modalities: *id002
+    task_types: *id003
+    latency_p50_ms: 200
+    cost_per_call: 0.0
+    accuracy_score: 0.5
+    requires_gpu: false
+    vram_mb: 0

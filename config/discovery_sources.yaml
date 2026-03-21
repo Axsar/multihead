@@ -1,0 +1,106 @@
+# Discovery sources configuration for Phase 4: Solver Discovery
+# Controls which sources are queried, how often, and with what filters.
+
+discovery:
+  # How often to run discovery (in days)
+  interval_days: 7
+
+  # Global filters
+  solver_types:
+    - llm
+    - vlm
+    - object_detection
+    - segmentation
+
+  # Minimum aggregate score for auto-adoption consideration
+  min_adoption_score: 0.60
+
+sources:
+  huggingface:
+    enabled: true
+    # HuggingFace API token (optional, increases rate limits)
+    api_token: ${HF_TOKEN}
+    # Minimum downloads to consider a model
+    min_downloads: 1000
+    # Maximum models per discovery run
+    limit: 20
+    # Pipeline tags to search
+    pipeline_tags:
+      - text-generation
+      - image-to-text
+      - object-detection
+      - image-segmentation
+      - visual-question-answering
+    # Prefer these organizations' models
+    preferred_orgs:
+      - meta-llama
+      - Qwen
+      - microsoft
+      - google
+      - ultralytics
+
+  ollama:
+    enabled: true
+    # Local Ollama server URL
+    server_url: ${OLLAMA_URL:-http://localhost:11434}
+    # Maximum models per discovery run
+    limit: 20
+    # Prefer these model families
+    preferred_families:
+      - llama3
+      - qwen
+      - phi
+      - mistral
+      - gemma
+      - llava
+
+  botvibes:
+    enabled: true
+    # ACP server URL (from environment)
+    acp_url: ${ACP_URL}
+    # Auth token (from environment)
+    acp_token: ${ACP_SESSION_KEY}
+    # Maximum providers per discovery run
+    limit: 10
+    # Capabilities to search for
+    capabilities:
+      - visual_reasoning
+      - text_generation
+      - reasoning
+      - code_generation
+      - object_detection
+
+  paperswithcode:
+    enabled: true
+    # Maximum results per task
+    limit: 10
+    # Tasks to track SOTA for
+    tasks:
+      - object-detection
+      - image-segmentation
+      - visual-question-answering
+      - text-generation
+    # Datasets to track
+    datasets:
+      - coco
+      - imagenet
+      - mmlu
+      - gsm8k
+
+benchmarking:
+  # Run benchmarks automatically on new discoveries
+  auto_benchmark: false
+  # Maximum samples per benchmark (for quick eval)
+  sample_limit: 10
+  # Timeout per benchmark (seconds)
+  timeout_seconds: 300
+  # Run benchmarks in parallel
+  parallel: false
+
+adoption:
+  # Auto-adopt solvers meeting criteria
+  auto_adopt: true
+  # Auto-register adopted solvers as heads
+  auto_register: false
+  # Notify user when solvers are adopted
+  notify_user: true

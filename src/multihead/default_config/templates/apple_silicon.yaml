@@ -1,0 +1,29 @@
+# Apple Silicon (M1/M2/M3/M4) configuration
+# Uses Ollama for Metal GPU acceleration
+# Requires: Install Ollama from https://ollama.ai then: ollama pull qwen3:8b
+
+heads:
+  # --- Testing (always available) ---
+  - head_id: mock-llm
+    name: Mock LLM
+    adapter: mock
+    model: mock-llm-v1
+    kind: llm
+    gpu_required: false
+
+  # --- Local LLM via Ollama ---
+  - head_id: core-llm
+    name: Qwen3 8B (Ollama)
+    adapter: ollama
+    model: qwen3:8b
+    kind: llm
+    endpoint: http://localhost:11434
+    gpu_required: false
+
+  # --- Uncomment if you have Claude Code CLI installed ---
+  # - head_id: claude-sonnet
+  #   name: Claude Sonnet
+  #   adapter: claude
+  #   model: sonnet
+  #   kind: llm
+  #   gpu_required: false

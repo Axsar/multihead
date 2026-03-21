@@ -1,0 +1,9 @@
+{
+    "python.testing.pytestArgs": [
+        "tests",
+        "-p", "no:xdist",
+        "--no-header"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}

@@ -1,0 +1,67 @@
+# MultiHead head registry — safe defaults (no GPU required)
+# Run `multihead init --auto` to detect your hardware and enable GPU heads.
+# Or manually uncomment the heads below if you have the right dependencies.
+
+heads:
+  # --- Always available (no dependencies) ---
+  - head_id: mock-llm
+    name: Mock LLM
+    adapter: mock
+    model: mock-llm-v1
+    kind: llm
+    gpu_required: false
+
+  - head_id: mock-vlm
+    name: Mock VLM
+    adapter: mock
+    model: mock-vlm-v1
+    kind: vlm
+    gpu_required: false
+
+  # --- Uncomment if you have Claude CLI installed (https://docs.anthropic.com/claude-code) ---
+  # - head_id: claude-sonnet
+  #   name: Claude Sonnet
+  #   adapter: claude
+  #   model: claude-sonnet-4-6
+  #   kind: llm
+  #   gpu_required: false
+
+  # --- Uncomment if you have claude-agent-sdk installed (pip install .[claude]) ---
+  # - head_id: claude-sdk
+  #   name: Claude Agent SDK
+  #   adapter: claude_agent_sdk
+  #   model: claude-sonnet-4-20250514
+  #   kind: llm
+  #   gpu_required: false
+  #   extra:
+  #     max_turns: 25
+  #     max_budget_usd: 5.0
+  #     permission_mode: bypassPermissions
+  #     effort: high
+
+  # --- Uncomment for local GPU models (requires CUDA + pip install .[gpu]) ---
+  # - head_id: core-llm
+  #   name: Qwen3 8B
+  #   adapter: transformers
+  #   model: Qwen/Qwen3-8B
+  #   kind: llm
+  #   gpu_required: true
+  #   vram_hint_mb: 6000
+  #   quantization: "4bit"
+
+  # - head_id: vision-vlm
+  #   name: Qwen3 VL 32B Thinking
+  #   adapter: transformers
+  #   model: Qwen/Qwen3-VL-32B-Thinking
+  #   kind: vlm
+  #   gpu_required: true
+  #   vram_hint_mb: 18000
+  #   quantization: "4bit"
+
+  # --- Uncomment if you have an OpenAI API key (set OPENAI_API_KEY in .env) ---
+  # - head_id: openai-gpt4o
+  #   name: GPT-4o Mini
+  #   adapter: openai
+  #   model: gpt-4o-mini
+  #   kind: llm
+  #   gpu_required: false

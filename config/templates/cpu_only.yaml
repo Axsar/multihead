@@ -1,0 +1,34 @@
+# CPU-only configuration (no GPU required)
+# Uses mock heads for testing + optional API-based heads
+
+heads:
+  # --- Testing (always available) ---
+  - head_id: mock-llm
+    name: Mock LLM
+    adapter: mock
+    model: mock-llm-v1
+    kind: llm
+    gpu_required: false
+
+  - head_id: mock-vlm
+    name: Mock VLM
+    adapter: mock
+    model: mock-vlm-v1
+    kind: vlm
+    gpu_required: false
+
+  # --- Uncomment if you have Claude Code CLI installed ---
+  # - head_id: claude-sonnet
+  #   name: Claude Sonnet
+  #   adapter: claude
+  #   model: sonnet
+  #   kind: llm
+  #   gpu_required: false
+
+  # --- Uncomment if you have an OpenAI API key ---
+  # - head_id: openai-gpt4o
+  #   name: GPT-4o Mini
+  #   adapter: openai
+  #   model: gpt-4o-mini
+  #   kind: llm
+  #   gpu_required: false

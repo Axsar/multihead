@@ -1,0 +1,71 @@
+# Phase 1 Test: Coordinate Transform with Capability-Based Routing
+# Tests deterministic solver selection for coordinate space transformation
+
+goal: "Test Phase 1 capability routing with coordinate transform"
+
+inputs:
+  tail_mask_resolution: [3975, 6150]  # UNet fixed resolution
+  page_resolution: [4042, 5929]        # Actual page dimensions
+  sample_points:
+    - [100, 200]
+    - [300, 400]
+    - [1500, 3000]
+
+steps:
+  # Step 1: Transform coordinates using task_types (Phase 1!)
+  - name: transform_coordinates
+    task_types:
+      - coordinate_transform
+    privacy:
+      data_sensitivity: internal  # Comic page data stays local
+    prompt_template: |
+      {{
+        "points": {sample_points},
+        "source_resolution": {tail_mask_resolution},
+        "target_resolution": {page_resolution}
+      }}
+
+  # Step 2: Validate result using deterministic validator
+  - name: validate_transform
+    task_types:
+      - schema_validation
+    input_refs: [transform_coordinates]
+    prompt_template: |
+      {{
+        "data": {transform_coordinates},
+        "schema": {{
+          "type": "object",
+          "required": ["transformed_points", "scale_factors"],
+          "properties": {{
+            "transformed_points": {{
+              "type": "array",
+              "items": {{"type": "array", "minItems": 2, "maxItems": 2}}
+            }},
+            "scale_factors": {{
+              "type": "object",
+              "required": ["scale_x", "scale_y"]
+            }}
+          }}
+        }}
+      }}
+
+  # Step 3: Summarize results (uses LLM for semantic reasoning)
+  - name: summarize_results
+    task_types:
+      - semantic_reasoning
+      - text_generation
+    input_refs: [transform_coordinates, validate_transform]
+    prompt_template: |
+      Transform results:
+      {transform_coordinates}
+
+      Validation:
+      {validate_transform}
+
+      Summarize:
+      1. How many points were transformed?
+      2. What were the scale factors?
+      3. Did validation pass?
+      4. Key insight about coordinate space transformation?
+
+      Return concise summary (3-4 sentences).

@@ -1,0 +1,50 @@
+# Consensus Verification Recipe: Cross-Modal Image Analysis
+# Proves: multi-head consensus, cross-modal verification, red flag detection
+#
+# Usage: multihead run consensus-verify --input /path/to/images/
+
+goal: "Analyze images using multiple heads and verify consistency"
+
+inputs:
+  input_path: ""
+
+budgets:
+  max_seconds: 300
+  max_tokens: 30000
+
+steps:
+  - name: initial_detection
+    head_id: mock-llm
+    prompt_template: |
+      Analyze the input and detect all objects/entities.
+      Return JSON: {"count": N, "objects": ["obj1", "obj2", ...]}
+
+      Input path: {input_path}
+
+  - name: verified_analysis
+    head_id: mock-llm
+    prompt_template: "Verify the detection results"
+    input_refs:
+      - initial_detection
+    consensus:
+      heads:
+        - head_id: mock-llm
+          prompt_template: "Confirm object count and list from detection results"
+          extract_fields: ["count"]
+        - head_id: mock-vlm
+          prompt_template: "Independently count objects in the image"
+          extract_fields: ["count"]
+      strategy: majority
+      cross_modal: true
+      fail_on_disagreement: false
+
+  - name: final_report
+    head_id: mock-llm
+    prompt_template: |
+      Compile a final verified report from the analysis.
+      Include confidence level based on cross-modal agreement.
+
+      Previous analysis:
+      {previous_step_output}
+    input_refs:
+      - verified_analysis
