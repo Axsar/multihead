@@ -375,6 +375,12 @@ Three lines per head. The router scores each head on availability, health, VRAM 
 
 [OpenClaw](https://github.com/clawctl/openclaw) agents can participate as heads in MultiHead. A claw is a claw, a head is a head — together they form a multi-agent system where each specialist contributes what it's best at. OpenClaw agents typically run on Ollama backends, and MultiHead coordinates them alongside local and cloud models through the shared knowledge store.
 
+#### AutoResearch — Codebase-Aware Local Agents
+
+*Under development.*
+
+[AutoResearch](https://github.com/Axsar/autoresearch) enables local agents that deeply understand your codebase. Instead of generic LLM responses, an AutoResearch-powered head can navigate your code, understand architecture, and answer questions grounded in actual source files. Combined with MultiHead's knowledge store, this creates local agents that know your code AND remember what they've learned across sessions.
+
 ---
 
 ### Knowledge Store
