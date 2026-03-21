@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "multihead"
 version = "2.0.0"
-description = "Local multimodal task-runner that decomposes work into steps, hot-swapping specialized models and tools in sequence, with RAG memory and optional online models"
+description = "Framework for building persistent AI specialists that verify, store, and reuse knowledge over time"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
