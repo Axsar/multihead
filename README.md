@@ -2,9 +2,11 @@
 
 **Build AI systems made of specialists — not one model trying to do everything.**
 
-MultiHead is a local-first framework for creating **persistent, domain-specific AI agents** that:
+Most AI tools forget everything between sessions. MultiHead doesn't.
+
+MultiHead is a framework for building AI systems composed of **persistent, domain-specific agents** that:
 - own parts of your codebase
-- accumulate knowledge over time
+- accumulate verified knowledge over time
 - improve through repeated use
 
 ![MultiHead Architecture](docs/multihead-architecture.png)
@@ -19,9 +21,7 @@ Most AI systems are stateless:
 MultiHead is stateful:
 - run → verify → store → improve
 
-Instead of treating every task as new, your system **builds experience**.
-
-Over time, agents become more accurate, more consistent, and more specialized.
+Instead of treating every task as new, your system **builds experience**. Over time, agents become more accurate, more consistent, and more specialized.
 
 ---
 
@@ -58,6 +58,8 @@ MultiHead coordinates them into a single system.
 ---
 
 ## Start Here
+
+In 2 minutes you will: store knowledge, query it, and see what the system knows about your code.
 
 ```bash
 # Install
