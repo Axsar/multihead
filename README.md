@@ -95,6 +95,80 @@ The result: a system that **accumulates understanding**, not just responses.
 
 ---
 
+## Example: Two Agents, One Knowledge Base
+
+Two Claude Code agents on the same machine, working in different repos. No copy-paste — they communicate through the knowledge store.
+
+**Setup:**
+- Agent A works in `~/repos/temperature-estimator/`
+- Agent B works in `~/repos/pressure-cooker-controller/`
+- Both share one MultiHead knowledge store
+
+**Step 1 — Agent A discovers something and deposits it:**
+
+Agent A is building a temperature estimation service. It decides the API contract:
+
+```bash
+# Agent A, working in ~/repos/temperature-estimator/
+multihead deposit \
+  "Temperature estimator exposes GET /api/v1/estimate?sensor_id=X — returns JSON {celsius: float, confidence: float, timestamp: iso8601}. Updated every 5 seconds. Returns 404 if sensor_id unknown." \
+  -k temperature_estimator.api.contract \
+  -p agent-a
+```
+
+**Step 2 — Agent B queries before writing integration code:**
+
+Agent B is building the pressure cooker controller. Before writing the integration, it checks what's known:
+
+```bash
+# Agent B, working in ~/repos/pressure-cooker-controller/
+multihead kb "temperature estimator"
+```
+
+Output:
+```
+temperature_estimator.api.contract (confidence: 0.90)
+  Temperature estimator exposes GET /api/v1/estimate?sensor_id=X —
+  returns JSON {celsius: float, confidence: float, timestamp: iso8601}.
+  Updated every 5 seconds. Returns 404 if sensor_id unknown.
+```
+
+**Step 3 — Agent B acts on it and deposits back:**
+
+Agent B writes the integration code using the contract, then records what it did:
+
+```bash
+# Agent B
+multihead deposit \
+  "Pressure cooker controller calls temperature_estimator at GET /api/v1/estimate?sensor_id=boiler-1. Polls every 10s. Triggers safety shutoff if celsius > 180 or confidence < 0.5." \
+  -k pressure_cooker.integration.temperature \
+  -p agent-b
+```
+
+**Step 4 — Agent A gets the full picture later:**
+
+Next time Agent A works on the temperature estimator, it asks for a briefing:
+
+```bash
+# Agent A
+multihead briefing temperature-estimator
+```
+
+Output:
+```
+=== Knowledge: temperature-estimator ===
+CONSTRAINTS:
+  • API contract: GET /api/v1/estimate?sensor_id=X → {celsius, confidence, timestamp}
+  • Pressure cooker depends on this endpoint — polls every 10s
+  • Safety-critical: confidence < 0.5 triggers shutoff downstream
+```
+
+Agent A now knows: **don't change the response schema** — another system depends on it, and it's safety-critical.
+
+No meetings. No Slack messages. No shared docs. The knowledge store is the communication channel, and every claim is timestamped and queryable forever.
+
+---
+
 ## Quick Start (5 minutes)
 
 ```bash
