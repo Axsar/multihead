@@ -18,6 +18,11 @@ from typing import Any
 from ..models import HeadManifest
 from .base import HeadAdapter
 
+# Strip CLAUDECODE at import time — prevents "nested session" detection
+# when multihead shell is launched from a terminal with Claude Code active.
+# Must happen before the SDK subprocess transport snapshots os.environ.
+os.environ.pop("CLAUDECODE", None)
+
 logger = logging.getLogger(__name__)
 
 # Default timeouts / limits

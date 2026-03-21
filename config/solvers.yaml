@@ -114,9 +114,9 @@ solvers:
       docvqa: 0.91
     requires_gpu: true
     vram_mb: 18000
-- solver_id: claude-sonnet
-  name: Claude Sonnet
-  adapter: claude
+- solver_id: claude-sdk
+  name: Claude SDK
+  adapter: claude_agent_sdk
   model: claude-sonnet-4-6
   kind: llm
   gpu_required: false
