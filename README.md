@@ -1,65 +1,94 @@
 # MultiHead
 
-**Build AI systems that remember what's true, verify what's not, and improve over time.**
+**Build AI systems made of specialists — not one model trying to do everything.**
 
-MultiHead is a **local-first framework for building AI task systems** with institutional memory, multi-agent consensus, and pluggable intelligence.
-
-Think of it as an **operating system for a team of AI specialists**.
-
-It’s not a chatbot. It’s not a hosted service.
-It’s infrastructure for building systems that *get smarter the more you use them*.
+MultiHead is a local-first system for creating **persistent, domain-specific AI agents** that:
+- own parts of your codebase
+- accumulate knowledge over time
+- improve through repeated use
 
 ![MultiHead Architecture](docs/multihead-architecture.png)
 
 ---
 
-## What This Is (and Isn’t)
+## What This Actually Is
 
-### ✅ What MultiHead is
+Most AI systems are stateless:
+- run → output → forget
 
-* A **builder framework** (like Django for AI pipelines)
-* A way to combine **models, tools, and workflows into systems**
-* A system that builds **verified knowledge over time**
-* A platform for **multi-step reasoning + execution**
+MultiHead is stateful:
+- run → verify → store → improve
 
-### ❌ What it’s not
+Instead of treating every task as new, your system **builds experience**.
+
+Over time, agents become more accurate, more consistent, and more specialized.
+
+---
+
+## Core Idea
+
+You don’t use one general-purpose AI.
+
+You create **specialists**:
+
+- Auth Agent → understands authentication logic
+- Payments Agent → understands billing flows
+- Infra Agent → understands deployment and systems
+
+Each agent:
+- lives next to your code
+- remembers what it has seen
+- builds domain expertise over time
+
+MultiHead coordinates them into a single system.
+
+---
+
+## How It Works
+
+1. Break a task into steps
+2. Route each step to the right specialist
+3. Execute using the appropriate model or tool
+4. Verify outputs
+5. Store knowledge for future tasks
+
+> Most systems execute tasks.
+> MultiHead builds **agents that get better at executing them**.
+
+---
+
+## What This Is NOT
 
 * Not a chatbot
 * Not “install and get AI magic”
-* Not pre-tuned for your domain
-* Not a managed service (see BotVibes)
+* Not pre-tuned for your domain — you customize it
+* Not a managed service (see [BotVibes](https://botvibes.io) for that)
 
 ---
 
-## Why MultiHead
+## Why Not Existing Frameworks?
 
-Most AI setups today:
-
-* Stateless (no real memory)
-* Single-model (no specialization)
-* No verification (trust whatever the model says)
-
-MultiHead gives you:
-
-* **Institutional memory** → not chat history, but *verified facts*
-* **Multi-agent consensus** → cross-check critical decisions
-* **Task decomposition** → break complex work into steps
-* **Continuous learning loop** → improve over days/weeks
+| Framework | What it does | What’s missing |
+|-----------|-------------|----------------|
+| LangGraph | Orchestration + state | Agents don’t persist or specialize |
+| CrewAI | Team mental model | No real knowledge accumulation |
+| AutoGen | Multi-agent reasoning | Ephemeral, no verification |
+| **MultiHead** | **Persistent specialists + verified knowledge** | — |
 
 ---
 
-## The Core Loop
+## The Knowledge Loop
 
 ```
 You work (code, conversations, decisions)
         ↓
 Night Shift extracts knowledge
         ↓
-Fusion verifies across sources
+Fusion verifies across independent sources
         ↓
-Knowledge store tracks truth over time
+Knowledge store tracks verified truth
         ↓
-Briefing feeds it back into your workflow
+Briefing feeds it back when you edit files
 ```
 
 The result: a system that **accumulates understanding**, not just responses.
@@ -249,44 +278,15 @@ What we built with it is just one example.
 
 ---
 
-## How This Is Actually Used
-
-One effective way to use MultiHead: treat AI agents like a development team.
-
-Instead of a single general-purpose assistant, create **persistent, domain-specific agents**:
-
-* One agent lives in `auth/` and understands authentication
-* One lives in `payments/` and owns billing logic
-* Another specializes in infrastructure or deployment
-* Another handles knowledge extraction
-
-Each agent:
-* Has local context (files, history, decisions)
-* Becomes specialized over time
-* Acts as the "owner" of that part of the system
-
-MultiHead connects them:
-* **Routes** tasks to the most relevant agent
-* **Shares** verified knowledge between domains
-* **Uses consensus** when decisions are uncertain
-* **Tracks** what each part of the system actually knows
-
-Instead of one assistant trying to do everything, you get a **system of specialists that collaborate and improve over time.**
+## What a Real Run Looks Like
 
 ```
-           [ Task ]
-              ↓
-         [ Router ]
-              ↓
-      ┌───────┼────────┐
-      ↓       ↓        ↓
-  [Auth]  [Payments] [Infra]
-   Agent    Agent     Agent
-      \       |       /
-       \      |      /
-        → [Knowledge] ←
-              ↓
-        [Consensus]
+>> entity_extraction    OK (3.3s)  — 15,791 entities
+>> claim_extraction     OK (17.2s) — 34,165 claims
+>> consistency_check    OK (5.8s)  — 426 contradictions found
+>> conflict_resolution  OK (26.1s) — 347 auto-resolved
+>> claim_fusion         OK (10.4s) — 639 independently verified facts
+>> staleness_sweep      OK (5.7s)  — 97 outdated claims marked stale
 ```
 
 ---
