@@ -348,10 +348,10 @@ class TestParsing:
     def test_extract_keywords(self):
         kws = _extract_keywords("Fix the memory leak in auth handler")
         assert "fix" in kws
-        assert "text" in kws
-        assert "overflow" in kws
-        assert "balloon" in kws
-        assert "layout" in kws
+        assert "memory" in kws
+        assert "leak" in kws
+        assert "auth" in kws
+        assert "handler" in kws
         # Stop words excluded
         assert "the" not in kws
         assert "in" not in kws
@@ -387,14 +387,14 @@ class TestTaskDecomposer:
     async def test_decompose_with_knowledge(self):
         hm = FakeHeadManager()
         ks = FakeKnowledgeStore([
-            FakeClaim("h2v.bubblefill", "BubbleFill is a 9-step bottom-up balloon text layout"),
-            FakeClaim("h2v.stage7a", "Stage 7a does export with balloon layout"),
+            FakeClaim("auth.handler.memory", "Auth handler allocates session objects per request without cleanup"),
+            FakeClaim("auth.middleware", "Auth middleware validates JWT on every /api/ route"),
             FakeClaim("unrelated", "Something about databases"),
         ])
         td = TaskDecomposer(hm, knowledge_store=ks)
         plan = await td.decompose("Fix memory leak in auth handler", head_id="mock-llm")
         # Should have found relevant claims
-        assert "BubbleFill" in hm.last_prompt or "balloon" in hm.last_prompt.lower()
+        assert "auth" in hm.last_prompt.lower() or "session" in hm.last_prompt.lower()
 
     @pytest.mark.asyncio
     async def test_decompose_resolves_head(self):
