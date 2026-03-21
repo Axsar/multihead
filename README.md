@@ -317,17 +317,81 @@ Briefing feeds it back when you edit files
 
 ## Key Features
 
-**Knowledge Store** — Not chat logs. Verified, evolving facts with lifecycle: proposed → corroborated → stale → superseded.
+### Heads and Adapters
 
-**Night Shift** — 26-stage pipeline. Harvests from conversations, code, git, CI. Cross-checks independent sources. Resolves contradictions. Runs nightly.
+A **head** is a specialist — anything that can do work. A local model, a cloud API, another team's agent, a trained pipeline. You don't care where intelligence comes from. You define what a head can do, and MultiHead routes work to it.
 
-**Heads** — Pluggable intelligence. 14 adapters: Ollama, Transformers, vLLM, OpenAI, Anthropic, Claude SDK, BotVibes. Local GPU or cloud API — same interface.
+An **adapter** is how a head connects to its backend. Same interface, different plumbing:
 
-**Consensus** — Multiple models vote on the answer. Strategies: majority, weighted, unanimous, threshold, and more.
+```yaml
+# Local model via Ollama
+- head_id: devstral
+  adapter: ollama
+  model: "devstral-small-2:24b"
+  kind: llm
 
-**Decomposition** — Complex goals → parallel DAG of atomic steps. Auto-routes each step to the best head. Infers dependencies from file access patterns.
+# Local model via HuggingFace Transformers (4-bit quantized)
+- head_id: qwen-llm
+  adapter: transformers
+  model: "Qwen/Qwen3-8B"
+  kind: llm
+  quantization: "4bit"
 
-**Research Features** — Tree-of-Thoughts, Process Reward Models, Reflection loops. Auto-enabled based on step type.
+# Cloud API
+- head_id: gpt4o
+  adapter: openai
+  model: "gpt-4o"
+  kind: llm
+  gpu_required: false
+
+# Claude as a native head
+- head_id: claude-sonnet
+  adapter: claude
+  model: "claude-sonnet-4-6"
+  kind: llm
+  gpu_required: false
+```
+
+Three lines per head. The router scores each head on availability, health, VRAM fit, capability match, and error history — then picks the best one for each step.
+
+**Available adapters:**
+
+| Adapter | Backend | GPU | Notes |
+|---------|---------|-----|-------|
+| `ollama` | Ollama server | Optional | Easiest setup. Wide model library. |
+| `transformers` | HuggingFace | Yes | Direct GPU control. 4-bit/8-bit quantization. |
+| `vllm` | vLLM server | Yes | High throughput. Sleep/wake for fast swapping. |
+| `openai` | OpenAI API | No | GPT-4o, GPT-4.1, batch API (50% cheaper). |
+| `anthropic` | Anthropic API | No | Claude models, batch API. |
+| `claude` | Claude CLI | No | Claude Code as a head. |
+| `claude_agent_sdk` | Claude Agent SDK | No | Claude with native tool use and session resume. |
+| `mock` | In-memory | No | Testing. No real inference. |
+| `botvibes` | BotVibes marketplace | No | Delegate to external providers. Pay per task. |
+| `acp` | Agent Communication Protocol | No | Multi-agent coordination, task queuing, trust scoring. |
+
+#### OpenClaw Integration
+
+*Under development.*
+
+[OpenClaw](https://github.com/clawctl/openclaw) agents can participate as heads in MultiHead. A claw is a claw, a head is a head — together they form a multi-agent system where each specialist contributes what it's best at. OpenClaw agents typically run on Ollama backends, and MultiHead coordinates them alongside local and cloud models through the shared knowledge store.
+
+---
+
+### Knowledge Store
+
+Not chat logs — **verified, evolving facts** with lifecycle: proposed → corroborated → stale → superseded. Every claim tracks its source (conversation, code, git, CI), confidence, and evidence. Agents query it before acting and deposit what they learn after.
+
+### Night Shift
+
+26-stage pipeline that runs nightly. Harvests from conversations, code, git, and CI. Cross-checks independent sources via multi-channel fusion. Resolves contradictions automatically or flags them for human review.
+
+### Consensus
+
+Multiple heads vote on the same question. Strategies: majority, weighted, unanimous, threshold. Used automatically during task decomposition — multiple heads propose plans, consensus picks the best one.
+
+### Decomposition
+
+Complex goals become parallel DAGs of atomic steps. The decomposer infers dependencies from file access patterns (write-after-read, test-after-edit) and runs independent steps concurrently. Research features auto-enable: Tree-of-Thoughts for exploration, Process Reward Models for code quality, Reflection loops for verification.
 
 ---
 
