@@ -382,7 +382,7 @@ Not for:
 
 ## License
 
-MIT for initial release. May move to BSL at a later milestone.
+MIT
 
 ---
 
