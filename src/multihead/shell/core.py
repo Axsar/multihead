@@ -119,6 +119,7 @@ class Shell(
         self._input_area: TextArea | None = None
         self._event_drain_task: asyncio.Task[None] | None = None
         self._processing_task: asyncio.Task[None] | None = None
+        self._brain_lock: asyncio.Lock = asyncio.Lock()
         self._current_session_id: str = ""
         self._tui_log_handler: _TUILogHandler | None = None
         self._shutting_down: bool = False

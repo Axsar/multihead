@@ -301,16 +301,17 @@ class InputMixin:
         self._set_status(_default_status)
 
         try:
-            if self.pipeline:
-                brain_fn = self._brain_fn_for_pipeline()
-                response = await self.pipeline.process(
-                    user_input, brain_fn, session_id,
-                    on_status=self._set_status,
-                )
-            elif self._brain == BRAIN_CLAUDE:
-                response = await self._chat_via_claude(session_id, user_input)
-            else:
-                response = await self._chat_via_local(session_id, user_input)
+            async with self._brain_lock:
+                if self.pipeline:
+                    brain_fn = self._brain_fn_for_pipeline()
+                    response = await self.pipeline.process(
+                        user_input, brain_fn, session_id,
+                        on_status=self._set_status,
+                    )
+                elif self._brain == BRAIN_CLAUDE:
+                    response = await self._chat_via_claude(session_id, user_input)
+                else:
+                    response = await self._chat_via_local(session_id, user_input)
         except (asyncio.CancelledError, KeyboardInterrupt):
             self._set_status("")
             self._tui_print("[dim]Cancelled.[/dim]")

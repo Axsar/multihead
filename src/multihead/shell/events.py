@@ -130,10 +130,11 @@ class EventsMixin:
             "Please review and take appropriate action."
         )
         try:
-            if self._brain == BRAIN_CLAUDE:
-                response = await self._chat_via_claude(session_id, prompt)
-            else:
-                response = await self._chat_via_local(session_id, prompt)
+            async with self._brain_lock:
+                if self._brain == BRAIN_CLAUDE:
+                    response = await self._chat_via_claude(session_id, prompt)
+                else:
+                    response = await self._chat_via_local(session_id, prompt)
             self._display_response(response)
         except Exception as e:
             self._tui_print(f"[red]  Auto-handle failed: {e}[/red]")
