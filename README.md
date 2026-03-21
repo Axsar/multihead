@@ -1,65 +1,73 @@
 # MultiHead
 
-**Build AI systems made of specialists — not one model trying to do everything.**
+**MultiHead turns AI into a team of specialists that learn.**
 
-Most AI tools forget everything between sessions. MultiHead doesn't.
-
-MultiHead is a framework for building AI systems composed of **persistent, domain-specific agents** that:
-- own parts of your codebase
-- accumulate verified knowledge over time
-- improve through repeated use
+Instead of one general model trying to do everything, MultiHead organizes work into persistent agents with domain expertise — code, auth, payments, infrastructure, vision, OCR, reasoning, and more. Each specialist improves over time by storing results, validating outputs, and reusing knowledge across tasks.
 
 ![MultiHead Architecture](docs/multihead-architecture.png)
 
 ---
 
-## What This Actually Is
-
-Most AI systems are stateless:
-- run → output → forget
-
-MultiHead is stateful:
-- run → verify → store → improve
-
-Instead of treating every task as new, your system **builds experience**. Over time, agents become more accurate, more consistent, and more specialized.
-
----
-
 ## Core Idea
 
-You don't use one general-purpose AI.
+Most AI workflows look like this:
 
-You create **specialists**:
+```
+prompt → model → output → discard
+```
 
-- Auth Agent → understands authentication logic
-- Payments Agent → understands billing flows
-- Infra Agent → understands deployment and systems
+MultiHead replaces that with:
 
-Each agent:
-- lives next to your code
-- remembers what it has seen
-- builds domain expertise over time
+```
+task → specialists → cross-check → store → improve
+```
 
-MultiHead coordinates them into a single system.
+Each run doesn't just produce an answer — it **builds capability**.
 
 ---
 
-## How It Works
+## What Makes MultiHead Different
 
-1. Break a task into steps
-2. Route each step to the right specialist
-3. Execute using the appropriate model or tool
-4. Verify outputs
-5. Store knowledge for future tasks
+**1. Persistent Specialists** — Agents live in folders, accumulate context, and develop domain expertise. Not stateless calls.
 
-> Most systems execute tasks.
-> MultiHead builds **agents that get better at executing them**.
+**2. Multi-Agent Execution** — Tasks are decomposed and routed across multiple specialists that collaborate and verify each other.
+
+**3. Built-in Verification** — Outputs are cross-checked using consensus, reflection, or additional agents before being accepted.
+
+**4. Memory That Compounds** — Results, decisions, and insights are stored and reused. Future runs get better.
+
+**5. Local-First, Model-Agnostic** — Run on your own hardware (GPU/CPU), use local or API models, and swap them freely.
+
+---
+
+## What You Can Do With It
+
+- Turn a codebase into a self-improving system
+- Run multi-step reasoning workflows with verification
+- Build domain-specific AI teams (e.g. auth + payments + infra)
+- Resurrect and maintain legacy or complex systems
+- Coordinate agents locally or across a marketplace ([BotVibes](https://botvibes.io))
+
+---
+
+## Quick Example
+
+```bash
+multihead solve "analyze this repo and fix failing tests"
+```
+
+What happens:
+1. Task is decomposed into steps
+2. Specialists (planner, coder, tester) are assigned
+3. Outputs are cross-checked
+4. Results are stored for reuse
+5. System improves for next run
 
 ---
 
 ## The Difference
 
-Same input, different output.
+Same input — different output.
 
 **Input:** `Analyze the authentication system`
 
@@ -92,6 +100,15 @@ Recommendation: align validation logic with configuration
 ```
 
 Typical AI describes what it sees. MultiHead extracts facts, verifies them across sources, and finds issues.
+
+---
+
+## Mental Model
+
+Think:
+- Not "one smart model"
+- But **a team of evolving specialists**
+- Coordinated, verified, and improving over time
 
 ---
 
