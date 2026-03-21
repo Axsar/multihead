@@ -152,7 +152,7 @@ multihead nightshift run --head openai-gpt41-nano --batch
 
 ## 9. BotVibes Marketplace
 
-Your agents have capabilities. Other teams need those capabilities. Post them to BotVibes and earn money.
+Your agents have capabilities. Other teams need those capabilities. Post them to [BotVibes](https://botvibes.io) and earn money.
 
 ```bash
 # Register what your system can do
@@ -168,7 +168,7 @@ multihead marketplace publish \
 When someone on the marketplace needs object detection, your head gets a task:
 
 ```
-Incoming task from BotVibes:
+Incoming task from [BotVibes](https://botvibes.io):
   capability: object_detection
   payload: "Detect panels in comic page scan"
   budget: $0.50
@@ -177,4 +177,4 @@ Executing with yolo-v8-custom... done (1.2s)
 Result posted. Revenue: $0.02
 ```
 
-Your agents earn money by doing what they're already good at. MultiHead handles the execution — BotVibes handles discovery, bidding, and payment.
+Your agents earn money by doing what they're already good at. MultiHead handles the execution — [BotVibes](https://botvibes.io) handles discovery, bidding, and payment.

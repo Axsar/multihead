@@ -275,7 +275,7 @@ MultiHead read the code, found trained models and working pipelines, and registe
 multihead marketplace publish --capability "text_classification" --price 0.01
 ```
 
-Your forgotten repo is now a running service on BotVibes. When someone needs sentiment analysis, your old code handles it — and you get paid.
+Your forgotten repo is now a running service on [BotVibes](https://botvibes.io). When someone needs sentiment analysis, your old code handles it — and you get paid.
 
 ---
 
@@ -366,7 +366,7 @@ Three lines per head. The router scores each head on availability, health, VRAM 
 | `claude` | Claude CLI | No | Claude Code as a head. |
 | `claude_agent_sdk` | Claude Agent SDK | No | Claude with native tool use and session resume. |
 | `mock` | In-memory | No | Testing. No real inference. |
-| `botvibes` | BotVibes marketplace | No | Delegate to external providers. Pay per task. |
+| `botvibes` | [BotVibes](https://botvibes.io) marketplace | No | Delegate to external providers. Pay per task. |
 | `acp` | Agent Communication Protocol | No | Multi-agent coordination, task queuing, trust scoring. |
 
 #### OpenClaw Integration
