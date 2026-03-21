@@ -2,7 +2,7 @@
 
 **Build AI systems made of specialists — not one model trying to do everything.**
 
-MultiHead is a local-first system for creating **persistent, domain-specific AI agents** that:
+MultiHead is a local-first framework for creating **persistent, domain-specific AI agents** that:
 - own parts of your codebase
 - accumulate knowledge over time
 - improve through repeated use
@@ -81,10 +81,10 @@ multihead nightshift run --head openai-gpt41-nano --batch
 ```
 
 ```
->> claim_extraction     OK (17.2s) — 34,165 claims
->> consistency_check    OK (5.8s)  — 426 contradictions found
->> claim_fusion         OK (10.4s) — 639 independently verified facts
->> staleness_sweep      OK (5.7s)  — 97 outdated claims marked stale
+>> claim_extraction     OK (17.2s) — 312 claims extracted
+>> consistency_check    OK (5.8s)  — 4 contradictions found
+>> claim_fusion         OK (10.4s) — 28 independently verified facts
+>> staleness_sweep      OK (5.7s)  — 3 outdated claims marked stale
 ```
 
 Now ask what the system knows about any file:
@@ -299,7 +299,7 @@ Briefing feeds it back when you edit files
 
 **Heads** — Pluggable intelligence. 14 adapters: Ollama, Transformers, vLLM, OpenAI, Anthropic, Claude SDK, BotVibes. Local GPU or cloud API — same interface.
 
-**Consensus** — Multiple models vote on the answer. Strategies: MAJORITY, WEIGHTED, UNANIMOUS, THRESHOLD, FIRST_TO_AHEAD.
+**Consensus** — Multiple models vote on the answer. Strategies: majority, weighted, unanimous, threshold, and more.
 
 **Decomposition** — Complex goals → parallel DAG of atomic steps. Auto-routes each step to the best head. Infers dependencies from file access patterns.
 
