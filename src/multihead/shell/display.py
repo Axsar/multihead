@@ -156,9 +156,42 @@ class DisplayMixin:
         except Exception:
             lines.append("  Heads: [dim]unavailable[/dim]")
 
-        # Knowledge
+        # Knowledge — breakdown by status + domains
         claim_count = self._count_claims()
         lines.append(f"  Knowledge: {claim_count:,} claims")
+        if claim_count > 0:
+            try:
+                import sqlite3
+                conn = sqlite3.connect(str(self.ks.db_path), timeout=5.0)
+                # Status breakdown
+                rows = conn.execute(
+                    "SELECT claim_status, COUNT(*) FROM claims GROUP BY claim_status"
+                ).fetchall()
+                status_map = dict(rows)
+                parts = []
+                corr = status_map.get("corroborated", 0)
+                if corr:
+                    parts.append(f"[green]{corr}[/green] corroborated")
+                stale = status_map.get("stale", 0)
+                if stale:
+                    parts.append(f"[yellow]{stale}[/yellow] stale")
+                contested = status_map.get("contested", 0)
+                if contested:
+                    parts.append(f"[red]{contested}[/red] contested")
+                if parts:
+                    lines.append(f"    {', '.join(parts)}")
+                # Top domains from accepted/corroborated claim keys
+                domain_rows = conn.execute(
+                    "SELECT DISTINCT substr(claim_key, 1, instr(claim_key || '.', '.') - 1) "
+                    "FROM claims WHERE claim_status IN ('accepted','corroborated') "
+                    "AND claim_key LIKE '%.%' LIMIT 8"
+                ).fetchall()
+                domains = [r[0] for r in domain_rows if r[0] and len(r[0]) > 1]
+                if domains:
+                    lines.append(f"    Domains: {', '.join(domains[:6])}")
+                conn.close()
+            except Exception:
+                pass  # Graceful fallback — just show total count
 
         # Mesh peers
         peers = self._get_peers()
@@ -200,38 +233,30 @@ class DisplayMixin:
 
         prompts: list[str] = []
         if is_mock and claim_count == 0:
-            # Fresh install with mock brain
+            # Fresh install with mock brain — guide to setup
             prompts = [
-                '[bold]Try one of these to get started:[/bold]',
-                '  [cyan]1.[/cyan] "What can you do?" — see MultiHead capabilities',
-                '  [cyan]2.[/cyan] /heads — list available model heads',
-                '  [cyan]3.[/cyan] /help — see all slash commands',
+                '[dim]No models configured yet. Run:[/dim]',
+                '  [cyan]multihead init --auto[/cyan]  — detect hardware and enable real models',
                 '',
-                '[dim]Tip: run `multihead init --auto` to detect your hardware and enable real models.[/dim]',
+                '[dim]Or explore with mock heads:[/dim]',
+                '  /heads  ·  /help  ·  /status',
             ]
-        elif is_mock:
-            # Returning user with mock brain but has knowledge
+        elif claim_count < 10:
+            # Empty or near-empty knowledge store
             prompts = [
-                '[bold]Try one of these:[/bold]',
-                '  [cyan]1.[/cyan] /knowledge — browse your knowledge base',
-                '  [cyan]2.[/cyan] /heads — see available heads',
-                '  [cyan]3.[/cyan] /status — system overview',
-            ]
-        elif claim_count == 0:
-            # Real brain but empty knowledge
-            prompts = [
-                '[bold]Try one of these:[/bold]',
-                '  [cyan]1.[/cyan] "Summarize this project" — let the brain explore',
-                '  [cyan]2.[/cyan] /status — see system overview',
-                '  [cyan]3.[/cyan] /help — see all commands',
+                '[dim]Knowledge store is empty. Populate it:[/dim]',
+                '  [cyan]multihead nightshift run --head <your-head> --batch[/cyan]',
+                '',
+                '[dim]Or deposit manually:[/dim]',
+                '  [cyan]multihead deposit "JWT tokens expire in 24h" -k auth.jwt.expiry[/cyan]',
             ]
         else:
-            # Real brain with existing knowledge
+            # Real brain with existing knowledge — grouped prompts
             prompts = [
-                '[bold]Try one of these:[/bold]',
-                '  [cyan]1.[/cyan] "What happened since I was last here?" — catch up',
-                '  [cyan]2.[/cyan] /knowledge — browse claims and events',
-                '  [cyan]3.[/cyan] /status — system overview',
+                '[bold]Try:[/bold]',
+                '  [cyan]Explore:[/cyan]  "what does the auth system do?"  ·  "explain payments flow"',
+                '  [cyan]Inspect:[/cyan]  "show known constraints"  ·  "what contradictions exist?"',
+                '  [cyan]Verify:[/cyan]   "verify: tokens expire in 24h"  ·  "what might be stale?"',
             ]
 
         if prompts:

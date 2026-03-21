@@ -57,57 +57,79 @@ MultiHead coordinates them into a single system.
 
 ---
 
-## Start Here
+## The Difference
 
-In 2 minutes you will: store knowledge, query it, and see what the system knows about your code.
+Same input, different output.
 
-```bash
-# Install
-pip install -e .
+**Input:** `Analyze the authentication system`
 
-# Detect your hardware, generate config
-multihead init --auto
-
-# Deposit a fact into the knowledge store
-multihead deposit "JWT tokens expire in 24h" -k auth.jwt.expiry
-
-# Query it back
-multihead kb "jwt"
+**Typical AI:**
+```
+The authentication system uses JWT tokens for user authentication.
+Tokens appear to expire after a set duration and are validated
+during requests. There is also a refresh mechanism to issue new
+tokens. The system seems standard and follows common patterns.
 ```
 
-That's it — you have a persistent knowledge store. Now point it at your codebase:
-
-```bash
-# Analyze your code and conversations — extract verified knowledge
-multihead nightshift run --head openai-gpt41-nano --batch
-```
-
-```
->> claim_extraction     OK (17.2s) — 312 claims extracted
->> consistency_check    OK (5.8s)  — 4 contradictions found
->> claim_fusion         OK (10.4s) — 28 independently verified facts
->> staleness_sweep      OK (5.7s)  — 3 outdated claims marked stale
-```
-
-Now ask what the system knows about any file:
-
-```bash
-multihead briefing src/auth/jwt_handler.py
-```
-
+**MultiHead:**
 ```
 CONSTRAINTS (corroborated — don't violate):
   • JWT tokens use RS256 signing with 24h expiry
+    Source: auth/token_manager.py:48 · Confidence: high
+
   • Token validation middleware runs on every /api/ route
+    Source: auth/middleware.py:12 · Confidence: high
 
 WARNINGS (stale — verify before assuming):
-  • Previous implementation used HS256 — changed in commit abc123
+  • Refresh token logic does not handle expiration edge cases
+    Source: auth/refresh.py:72 · Confidence: medium
 
-HISTORY (superseded — don't repeat):
-  • Tried storing tokens in localStorage — XSS vulnerability, reverted
+CONTRADICTION:
+  • Token expiry set to 24h in config, but 12h in validation logic
+    Sources: config/auth.yaml:12 ↔ auth/validator.py:33
+
+Recommendation: align validation logic with configuration
 ```
 
-Your codebase now has institutional memory.
+Typical AI describes what it sees. MultiHead extracts facts, verifies them across sources, and finds issues.
+
+---
+
+## Start Here
+
+```bash
+pip install -e .
+multihead init --auto
+multihead shell
+```
+
+You'll enter an interactive system where agents collaborate and build knowledge over time.
+
+```
+MultiHead Shell v1.2
+System ready.
+
+Knowledge Store: 42 claims
+  Constraints: 8 corroborated
+  Warnings: 3 stale
+  Contested: 1 contradiction
+  Domains: auth, payments, infra
+
+Try:
+  Explore:  "what does the auth system do?"  ·  "explain payments flow"
+  Inspect:  "show known constraints"  ·  "what contradictions exist?"
+  Verify:   "verify: tokens expire in 24h"  ·  "what might be stale?"
+
+[qwen-llm] you>
+```
+
+To populate the knowledge store, run the Night Shift pipeline:
+
+```bash
+multihead nightshift run --head openai-gpt41-nano --batch
+```
+
+This extracts knowledge from your code, conversations, and git history — then cross-checks independent sources to separate verified facts from stale assumptions.
 
 ---
 
