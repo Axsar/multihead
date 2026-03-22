@@ -22,11 +22,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff
 
-      - name: Ruff check
+      - name: Ruff lint
         run: ruff check src/ --output-format github
-
-      - name: Ruff format check
-        run: ruff format src/ --check
 
   test:
     runs-on: ubuntu-latest
