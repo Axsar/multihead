@@ -1,0 +1,28 @@
+line-length = 120
+
+[lint]
+# Conservative — catch real bugs, not style preferences
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes (unused imports, undefined names, etc.)
+]
+ignore = [
+    "E501",  # line too long
+    "E741",  # ambiguous variable name
+    "E402",  # module-import-not-at-top (we have valid sys.path inserts)
+    "E731",  # lambda assignment
+    "E722",  # bare except
+    "F401",  # unused import (too noisy for now, clean up later)
+    "F811",  # redefined unused (pytest fixtures)
+    "F841",  # unused variable
+    "F541",  # f-string without placeholders (harmless, clean up later)
+]
+
+[lint.per-file-ignores]
+"tests/**" = ["F811", "F401"]
+"scripts/**" = ["E402", "F401"]
+"src/multihead/knowledge_store/_inbox.py" = ["F821"]  # lazy imports in methods
+"src/multihead/shell/tui.py" = ["F821"]  # TYPE_CHECKING guard
+
+[lint.isort]
+known-first-party = ["multihead"]

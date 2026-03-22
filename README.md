@@ -1,5 +1,9 @@
 # MultiHead
 
+[![CI](https://github.com/Axsar/multihead/actions/workflows/test.yml/badge.svg)](https://github.com/Axsar/multihead/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+
 **Build AI systems made of specialists that learn.**
 
 Most AI tools forget everything between runs. MultiHead doesn't.

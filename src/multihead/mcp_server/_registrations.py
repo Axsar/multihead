@@ -346,9 +346,9 @@ async def multihead_check_inbox(
                 if hasattr(claim, "valid_to") and claim.valid_to:
                     valid_to_str = claim.valid_to.isoformat() if hasattr(claim.valid_to, "isoformat") else str(claim.valid_to)
                     try:
-                        from datetime import datetime as _dt
+                        from datetime import datetime as _dt, timezone as _tz
                         vt = _dt.fromisoformat(valid_to_str) if isinstance(claim.valid_to, str) else claim.valid_to
-                        expired = vt < datetime.now(timezone.utc) if vt.tzinfo else False
+                        expired = vt < _dt.now(_tz.utc) if vt.tzinfo else False
                     except Exception:
                         pass
                 items.append({
