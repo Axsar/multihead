@@ -18,10 +18,13 @@ from typing import Any
 from ..models import HeadManifest
 from .base import HeadAdapter
 
-# Strip CLAUDECODE at import time — prevents "nested session" detection
-# when multihead shell is launched from a terminal with Claude Code active.
-# Must happen before the SDK subprocess transport snapshots os.environ.
+# Strip env vars at import time — before the SDK subprocess transport
+# snapshots os.environ for child processes.
+# CLAUDECODE: prevents "nested session" detection from Claude Code terminals.
+# ANTHROPIC_API_KEY: forces SDK to use subscription auth instead of API billing.
+#   If you need API billing, set api_key in the head's extra config instead.
 os.environ.pop("CLAUDECODE", None)
+os.environ.pop("ANTHROPIC_API_KEY", None)
 
 logger = logging.getLogger(__name__)
 
