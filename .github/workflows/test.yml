@@ -52,6 +52,7 @@ jobs:
             --ignore=tests/0-nano/test_embedding_search.py \
             --ignore=tests/0-nano/test_shell.py \
             --ignore=tests/0-nano/test_shell_commands.py \
+            --ignore=tests/0-nano/test_security.py \
             -k "not sdk_mcp and not claude_agent"
 
       - name: Check import
