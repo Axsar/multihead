@@ -170,9 +170,9 @@ class TestDeriveScopeId:
         p = ProjectInfo(name="-mnt-d-DevD-Vibebots", path=Path("/tmp"))
         assert SessionHarvester._derive_scope_id(p) == "vibebots"
 
-    def test_h2v(self):
+    def test_generic_project(self):
         p = ProjectInfo(name="-home-user-projects-myapp", path=Path("/tmp"))
-        assert SessionHarvester._derive_scope_id(p) == "h2v"
+        assert SessionHarvester._derive_scope_id(p) == "myapp"
 
     def test_htovprocess(self):
         p = ProjectInfo(name="-mnt-d-HTOVProcess", path=Path("/tmp"))

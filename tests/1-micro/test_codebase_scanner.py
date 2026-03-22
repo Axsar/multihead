@@ -641,8 +641,8 @@ class TestHelpers:
         assert slug("my cool tool") == "my_cool_tool"
 
     def test_project_name_mappings(self):
-        # Mappings removed (were user-specific). Now returns folder name as-is.
-        assert project_name(Path("/tmp/MyProject")) == "myproject"
+        # CamelCase is converted to snake_case, lowercased
+        assert project_name(Path("/tmp/MyProject")) == "my_project"
         assert project_name(Path("/tmp/MyTools")) == "my_tools"
         assert project_name(Path("/tmp/Vibebots")) == "vibebots"
         assert project_name(Path("/tmp/Multihead")) == "multihead"
