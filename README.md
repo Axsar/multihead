@@ -17,6 +17,8 @@ After:  agent runs → output verified → knowledge stored → next run starts 
 
 ![MultiHead Architecture](docs/multihead-architecture.png)
 
+> "I built a team of coding agents, and became a human copy & paste machine. Then I built MultiHead." — axsar
+
 ---
 
 ## What This Actually Does
@@ -314,7 +316,3 @@ MIT
 - [Architecture](docs/repo-structure.md) — full codebase map
 - [All Examples](docs/examples.md) — consensus, shell, night shift details, and more
 - [BotVibes](https://botvibes.io) — marketplace for capability trading
-
----
-
-> "I built a team of coding agents, and became a human copy & paste machine. Then I built MultiHead." — axsar
