@@ -17,7 +17,9 @@ After:  agent runs → output verified → knowledge stored → next run starts 
 
 ![MultiHead Architecture](docs/multihead-architecture.png)
 
-> "I built a team of coding agents, and became a human copy & paste machine. Then I built MultiHead." — axsar
+<br>
+
+> *"I built a team of coding agents, and became a human copy & paste machine. Then I built MultiHead."* — axsar
 
 ---
 
