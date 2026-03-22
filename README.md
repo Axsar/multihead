@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-**Make your coding agent smarter — without replacing it.**
+**Make your coding agent team smarter with tools.**
 
 MultiHead is an orchestration and knowledge layer that sits alongside your existing tools — Claude Code, Codex, local models, or custom agents — and gives them persistent memory, verified knowledge, and multi-agent coordination.
 
