@@ -64,15 +64,17 @@ class ConsensusDecompositionMixin:
 
         # Prepare consensus configuration
         if heads is None:
-            # Use only active/loaded LLM heads (skip offline ones to avoid hangs)
-            from multihead.models import HeadState
+            # Use only active/loaded LLM heads (skip offline and mock ones)
+            from multihead.models import AdapterKind, HeadState
             heads = [h for h, manifest in head_mgr._manifests.items()
                     if manifest.kind == "llm"
+                    and manifest.adapter != AdapterKind.MOCK
                     and head_mgr.get_state(h) == HeadState.ACTIVE]
             if not heads:
-                # Fallback: try to use just the first LLM head (will be loaded on demand)
+                # Fallback: first non-mock LLM head (will be loaded on demand)
                 heads = [h for h, manifest in head_mgr._manifests.items()
-                        if manifest.kind == "llm"][:1]
+                        if manifest.kind == "llm"
+                        and manifest.adapter != AdapterKind.MOCK][:1]
 
         # Build HeadTask configs
         head_tasks = []
