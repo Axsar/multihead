@@ -67,6 +67,7 @@ class CloudMarketplaceBridge(
         # State tracking
         self._quoted_rfqs: set[str] = set()
         self._declined_contracts: set[str] = set()  # Track declined to avoid re-polling
+        self._failed_contracts: dict[str, int] = {}  # Track failure counts to prevent retry loops
         self._active_contracts: dict[str, asyncio.Task[None]] = {}
         self._listings_cache: list[dict[str, Any]] = []
         self._listings_cache_time: float = 0.0

@@ -11,6 +11,9 @@ import httpx
 from ._constants import CLOUD_TIMEOUT, logger
 
 
+_MAX_CONTRACT_RETRIES = 3
+
+
 class ContractMixin:
     """Mixin providing contract monitoring and execution logic."""
 
@@ -19,6 +22,7 @@ class ContractMixin:
     _cloud_agent_id: str
     _active_contracts: dict[str, asyncio.Task[None]]
     _declined_contracts: set[str]
+    _failed_contracts: dict[str, int]  # contract_id → failure count
     _stats: dict[str, Any]
     _running: bool
     _agentic_core: Any
@@ -100,6 +104,8 @@ class ContractMixin:
             if not contract_id or contract_id in self._active_contracts:
                 continue
             if contract_id in self._declined_contracts:
+                continue
+            if self._failed_contracts.get(contract_id, 0) >= _MAX_CONTRACT_RETRIES:
                 continue
 
             if len(self._active_contracts) >= max_contracts:
@@ -217,6 +223,14 @@ class ContractMixin:
             outcome = "failure"
             output = str(e)
             confidence = 0.0
+            # Track failure count to prevent infinite retry loops
+            self._failed_contracts[contract_id] = self._failed_contracts.get(contract_id, 0) + 1
+            if self._failed_contracts[contract_id] >= _MAX_CONTRACT_RETRIES:
+                logger.warning(
+                    "Contract %s failed %d times, giving up",
+                    contract_id[:8], self._failed_contracts[contract_id],
+                )
+                self._emit("failed", f"Contract {contract_id[:8]} — max retries reached, skipping")
 
         latency_ms = int((time.time() - start_time) * 1000)
 
