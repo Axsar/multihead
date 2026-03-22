@@ -77,6 +77,14 @@ class BrainMixin:
                     if conv_block:
                         system_prompt += f"\n\n{conv_block}"
 
+            import os as _os
+            logger.info(
+                "Claude brain call: CLAUDECODE=%s, prompt_len=%d, sys_len=%d, conv_id=%s",
+                _os.environ.get("CLAUDECODE", "NOT_SET"),
+                len(user_input),
+                len(system_prompt),
+                self._claude_conversation_id,
+            )
             result = await self._claude_adapter.generate(
                 user_input,
                 system_prompt=system_prompt,

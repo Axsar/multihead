@@ -38,21 +38,13 @@ heads:
     vram_hint_mb: 18000
     quantization: "4bit"
 
-  # --- Claude via Agent SDK (default brain, no separate API cost) ---
+  # --- Claude via Agent SDK (uses system claude CLI with your subscription) ---
   - head_id: claude-sdk
     name: Claude SDK
     adapter: claude_agent_sdk
     model: claude-sonnet-4-6
     kind: llm
     gpu_required: false
-
-  # --- Claude via CLI (uses Anthropic API key, costs money) ---
-  # - head_id: claude-sonnet
-  #   name: Claude Sonnet
-  #   adapter: claude
-  #   model: claude-sonnet-4-6
-  #   kind: llm
-  #   gpu_required: false
 
   # --- Uncomment if you have an OpenAI API key ---
   # - head_id: openai-gpt4o

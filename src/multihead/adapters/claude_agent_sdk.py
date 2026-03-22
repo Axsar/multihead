@@ -127,6 +127,8 @@ class ClaudeAgentSDKAdapter(HeadAdapter):
 
     def _build_options(self, **kwargs: Any) -> Any:
         """Build ClaudeAgentOptions from adapter config + per-call overrides."""
+        import shutil
+        cli_path = kwargs.pop("cli_path", None) or shutil.which("claude")
         opts = ClaudeAgentOptions(
             model=kwargs.pop("model", self._model),
             max_turns=kwargs.pop("max_turns", self._max_turns),
@@ -134,6 +136,8 @@ class ClaudeAgentSDKAdapter(HeadAdapter):
             permission_mode=kwargs.pop("permission_mode", self._permission_mode),
             cwd=kwargs.pop("cwd", self._cwd),
             effort=kwargs.pop("effort", self._effort),
+            cli_path=cli_path,
+            stderr=lambda line: logger.warning("claude stderr: %s", line),
         )
 
         # System prompt
@@ -147,10 +151,11 @@ class ClaudeAgentSDKAdapter(HeadAdapter):
             opts.allowed_tools = allowed
 
         # MCP servers (in-process + any per-call)
+        # Always set explicitly to prevent Claude from reading .mcp.json
+        # which may reference a wrong Python env and crash the subprocess.
         mcp = dict(self._mcp_servers)
         mcp.update(kwargs.pop("mcp_servers", {}))
-        if mcp:
-            opts.mcp_servers = mcp
+        opts.mcp_servers = mcp  # Empty dict = no MCP servers (overrides .mcp.json)
 
         # Extended thinking — SDK expects {"type": "enabled", "budget_tokens": N}
         thinking = kwargs.pop("thinking", self._thinking)
