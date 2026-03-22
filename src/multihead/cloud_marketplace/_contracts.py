@@ -47,10 +47,39 @@ class ContractMixin:
     # Contract Monitor — execute awarded contracts
     # ------------------------------------------------------------------
 
+    def _load_failed_contracts_from_kb(self) -> None:
+        """Load previously failed contract IDs from knowledge store on startup."""
+        if not self._knowledge_store:
+            return
+        try:
+            import sqlite3
+            conn = sqlite3.connect(str(self._knowledge_store.db_path), timeout=5.0)
+            rows = conn.execute(
+                "SELECT claim_key FROM claims "
+                "WHERE claim_key LIKE 'cloud.marketplace.contract.failed.%' "
+                "AND claim_status IN ('accepted', 'proposed')"
+            ).fetchall()
+            conn.close()
+            for row in rows:
+                # claim_key = cloud.marketplace.contract.failed.<contract_id>
+                contract_id = row[0].rsplit(".", 1)[-1]
+                if contract_id:
+                    self._failed_contracts[contract_id] = _MAX_CONTRACT_RETRIES
+            if self._failed_contracts:
+                logger.info(
+                    "Loaded %d previously failed contracts from knowledge store",
+                    len(self._failed_contracts),
+                )
+        except Exception as e:
+            logger.debug("Failed to load failed contracts from KB: %s", e)
+
     async def _contract_monitor_loop(self) -> None:
         """Periodically check for active contracts and execute them."""
         svc = self._svc_config()
         interval = getattr(svc, "cloud_contract_interval", 30) if svc else 30
+
+        # Load failed contracts from knowledge store (persisted across restarts)
+        self._load_failed_contracts_from_kb()
 
         logger.info("Contract monitor started (interval=%ds)", interval)
 
@@ -231,6 +260,12 @@ class ContractMixin:
                     contract_id[:8], self._failed_contracts[contract_id],
                 )
                 self._emit("failed", f"Contract {contract_id[:8]} — max retries reached, skipping")
+                # Persist to knowledge store so we remember across restarts
+                self._deposit_claim(
+                    f"cloud.marketplace.contract.failed.{contract_id}",
+                    f"Contract {contract_id} failed {self._failed_contracts[contract_id]} times. "
+                    f"Last error: {output[:200]}. Giving up — will not retry.",
+                )
 
         latency_ms = int((time.time() - start_time) * 1000)
 
