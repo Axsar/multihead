@@ -4,85 +4,50 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-**Build AI systems made of specialists that learn.**
+**Make your coding agent smarter — without replacing it.**
 
-Most AI tools forget everything between runs. MultiHead doesn't.
+MultiHead is an orchestration and knowledge layer that sits alongside your existing tools — Claude Code, Codex, local models, or custom agents — and gives them persistent memory, verified knowledge, and multi-agent coordination.
 
-MultiHead organizes work into **persistent, domain-specific agents** that:
-- own parts of your codebase
-- verify what they learn
-- store reusable knowledge
-- improve through repeated use
+You don't switch workflows. You enhance them.
+
+```
+Before: agent runs → output → forgets everything
+After:  agent runs → output verified → knowledge stored → next run starts smarter
+```
 
 ![MultiHead Architecture](docs/multihead-architecture.png)
 
-**Think of MultiHead as a team of evolving specialists coordinated into one system.**
+---
+
+## What This Actually Does
+
+Your coding agent (Claude Code, Codex, whatever) works normally. MultiHead adds three things:
+
+**1. Knowledge that persists across sessions.** Before you edit a file, MultiHead briefs you on what's known — constraints, warnings, contradictions, history. After you work, it extracts what you learned and stores it for next time.
+
+**2. Verification across independent sources.** Night Shift runs in the background, cross-checking what was said in conversations against what the code actually does, what git history shows, and what CI reports. Agreements become corroborated facts. Disagreements get flagged.
+
+**3. Multi-agent coordination.** Multiple agents working in different repos can share knowledge through a common store. No copy-paste, no Slack messages — deposit a claim, other agents query it.
 
 ---
 
-## What This Actually Is
+## Works With Your Existing Setup
 
-Most AI systems are stateless:
+MultiHead is not a replacement for your tools. It's a layer underneath them.
 
-```
-run → output → forget
-```
+**Integration points:**
+- **Claude Code** — MCP server provides 25+ tools. Knowledge hooks auto-inject briefings before file edits.
+- **Any CLI agent** — call `multihead briefing <file>` or `multihead kb "topic"` from any script or agent.
+- **Python** — `from multihead.client import MultiHeadClient` for programmatic access.
+- **Background** — Night Shift runs nightly, extracting and verifying knowledge while you sleep.
 
-MultiHead is stateful:
-
-```
-run → verify → store → improve
-```
-
-Instead of treating every task as brand new, MultiHead builds experience. Over time, specialists become more accurate, more consistent, and more useful in their own domains.
-
----
-
-## Core Idea
-
-You don't rely on one general-purpose model to do everything.
-
-You create **specialists**:
-
-- **Auth Agent** → understands authentication logic
-- **Payments Agent** → understands billing flows
-- **Infra Agent** → understands deployment and systems
-
-Each specialist:
-- lives next to the code it works on
-- remembers what it has seen
-- accumulates verified context
-- improves over time
-
-MultiHead coordinates them into a single working system.
-
----
-
-## What Lives Inside a Specialist
-
-A specialist is not just a prompt. It is a small working unit with memory.
-
-```
-agents/
-  auth-agent/
-    prompts.md
-    memory.json
-    constraints.json
-    past_fixes/
-    briefings/
-```
-
-Over time, each specialist builds **institutional knowledge** for its domain:
-- known constraints
-- prior fixes
-- contradictions worth checking
-- context that should not be rediscovered from scratch
+**You can also use MultiHead directly** via the interactive shell (`multihead shell`) or CLI commands — but that's optional. The primary value is what it adds to your existing workflow.
 
 ---
 
 ## The Difference
 
-Same input — different result.
+Same input to two systems:
 
 **Input:** `Analyze the authentication system`
 
@@ -94,7 +59,7 @@ during requests. There is also a refresh mechanism to issue new
 tokens. The system seems standard and follows common patterns.
 ```
 
-**MultiHead:**
+**Your agent + MultiHead:**
 ```
 CONSTRAINTS (corroborated — don't violate):
   • JWT tokens use RS256 signing with 24h expiry
@@ -114,11 +79,94 @@ CONTRADICTION:
 Recommendation: align validation logic with configuration
 ```
 
-Typical AI describes what it sees. MultiHead extracts facts, verifies them across sources, and surfaces conflicts.
+Typical AI describes what it sees. With MultiHead, your agent extracts facts, verifies them across sources, and surfaces conflicts — and remembers all of it for next time.
 
 ---
 
-## A Real Solve Run
+## How It Works
+
+```
+You work (code, conversations, decisions)
+        ↓
+Night Shift extracts knowledge from all channels
+        ↓
+Fusion cross-checks: code vs git vs conversation vs CI
+        ↓
+Knowledge store tracks verified truth
+        ↓
+Briefings feed it back when you (or your agent) edit files
+```
+
+Each cycle makes the system more accurate. Your agent doesn't start from scratch — it starts from verified institutional knowledge.
+
+---
+
+## Try It
+
+```bash
+pip install -e .
+multihead init --auto
+```
+
+Then use it from your existing agent, or try it directly:
+
+```bash
+# Query what the system knows
+multihead kb "authentication"
+
+# Get a briefing before editing a file
+multihead briefing src/auth/jwt_handler.py
+
+# Deposit knowledge
+multihead deposit "JWT tokens expire in 24h" -k auth.jwt.expiry
+
+# Run the full knowledge pipeline
+multihead nightshift run --head openai-gpt41-nano --batch
+
+# Or use the interactive shell
+multihead shell
+```
+
+---
+
+## Examples
+
+### Agent-to-Agent Knowledge Sharing
+
+Two agents on the same machine, different repos. They share knowledge through the store — no copy-paste.
+
+**Agent A** (temperature estimator) defines the API contract:
+
+```bash
+multihead deposit \
+  "Temperature estimator exposes GET /api/v1/estimate?sensor_id=X — returns JSON {celsius: float, confidence: float, timestamp: iso8601}. Updated every 5s. Returns 404 if sensor_id unknown." \
+  -k temperature_estimator.api.contract \
+  -p agent-a
+```
+
+**Agent B** (pressure cooker controller) queries before writing integration code:
+
+```bash
+multihead kb "temperature estimator"
+```
+
+Agent B now knows the contract and builds to it. Later, Agent A asks for a briefing:
+
+```bash
+multihead briefing temperature-estimator
+```
+```
+CONSTRAINTS:
+  • API contract: GET /api/v1/estimate?sensor_id=X → {celsius, confidence, timestamp}
+  • Pressure cooker depends on this endpoint — polls every 10s
+  • Safety-critical: confidence < 0.5 triggers shutoff downstream
+```
+
+Agent A now knows: **don't change the response schema** — another system depends on it.
+
+---
+
+### Autonomous Task Solving
 
 ```bash
 multihead solve "Fix the timeout bug in the webhook retry handler"
@@ -135,285 +183,98 @@ Solve complete: 5 steps, 0 failures, 17.0s
 Knowledge deposited: 3 new claims
 ```
 
-What matters is not just that the task was solved. What matters is that the result becomes part of the system's **reusable knowledge**. Next time any agent touches this code, the briefing includes what was learned.
-
----
-
-## Start Here
-
-```bash
-pip install -e .
-multihead init --auto
-multihead shell
-```
-
-```
-MultiHead Shell v1.2
-System ready.
-
-Knowledge Store: 42 claims
-  Constraints: 8 corroborated
-  Warnings: 3 stale
-  Contested: 1 contradiction
-  Domains: auth, payments, infra
-
-Try:
-  "what does the auth system do?"
-  "show known constraints"
-  "what contradictions exist?"
-
-[qwen-llm] you>
-```
-
----
-
-## What You Can Do With It
-
-- Turn a codebase into a **self-improving system**
-- Build **domain-specific specialists** for parts of your stack
-- Run **multi-step solve workflows** with verification
-- Extract **corroborated constraints, warnings, and contradictions**
-- Resurrect old repos by turning forgotten code into reusable capability
-
----
-
-## Advanced Modes and Ecosystem
-
-Everything below extends the core system. If you only want persistent specialists, verification, and reusable knowledge — you can stop here and start using MultiHead now.
-
----
-
-### Agent-to-Agent Communication
-
-Two agents on the same machine, different repos. They communicate through the knowledge store — no copy-paste.
-
-**Agent A** (temperature estimator) defines the API contract:
-
-```bash
-multihead deposit \
-  "Temperature estimator exposes GET /api/v1/estimate?sensor_id=X — returns JSON {celsius: float, confidence: float, timestamp: iso8601}. Updated every 5s. Returns 404 if sensor_id unknown." \
-  -k temperature_estimator.api.contract \
-  -p agent-a
-```
-
-**Agent B** (pressure cooker controller) queries before writing integration code:
-
-```bash
-multihead kb "temperature estimator"
-```
-```
-temperature_estimator.api.contract (confidence: 0.90)
-  GET /api/v1/estimate?sensor_id=X → {celsius, confidence, timestamp}
-```
-
-Agent B writes the integration, then records what it built:
-
-```bash
-multihead deposit \
-  "Pressure cooker controller polls temperature_estimator every 10s at sensor_id=boiler-1. Triggers safety shutoff if celsius > 180 or confidence < 0.5." \
-  -k pressure_cooker.integration.temperature \
-  -p agent-b
-```
-
-Later, Agent A asks for a briefing before making changes:
-
-```bash
-multihead briefing temperature-estimator
-```
-```
-CONSTRAINTS:
-  • API contract: GET /api/v1/estimate?sensor_id=X → {celsius, confidence, timestamp}
-  • Pressure cooker depends on this endpoint — polls every 10s
-  • Safety-critical: confidence < 0.5 triggers shutoff downstream
-```
-
-Agent A now knows: **don't change the response schema** — another system depends on it, and it's safety-critical.
+The task is decomposed into a DAG, routed to the right head, executed with verification, and the results are stored. Next time anyone touches this code, the briefing includes what was learned.
 
 ---
 
 ### Resurrect Old Code
 
-You have a repo from two years ago — a sentiment analysis pipeline. It works, but nobody's using it.
+Point MultiHead at a forgotten repo. It analyzes the code, discovers capabilities, and you can publish them to the marketplace.
 
 ```bash
-# Point MultiHead at the old repo
 export MULTIHEAD_PROJECT_ROOTS="~/repos/old-sentiment-pipeline"
-
-# Night Shift analyzes everything
 multihead nightshift run --head openai-gpt41-nano --batch
 ```
 
 ```
->> behavioral_analysis   OK (8.4s)  — 1 repo scanned
->> claim_extraction      OK (6.1s)  — 247 claims
 >> solver_discovery      OK (3.2s)  — 2 capabilities found:
      • text_classification (sentiment_model.py — 94.2% accuracy on SST-2)
      • text_preprocessing (clean_pipeline.py — handles HTML, Unicode, emoji)
 ```
 
-MultiHead read the code, found trained models and working pipelines, and registered them as capabilities. Publish to the marketplace:
-
 ```bash
 multihead marketplace publish --capability "text_classification" --price 0.01
 ```
 
-Your forgotten repo is now a running service on [BotVibes](https://botvibes.io). When someone needs sentiment analysis, your old code handles it — and you get paid.
+Dead code becomes a running service on [BotVibes](https://botvibes.io).
 
 ---
 
-### Distributed Solve (Multi-Agent)
+## Why Not Just Use One Model?
 
-A task that spans multiple repos. The coordinator posts it, specialist agents propose plans, consensus picks the winner, and work is assigned to whoever owns that domain.
+Single models guess, hallucinate, don't verify themselves, and forget everything between sessions.
 
-```bash
-multihead solve "Migrate user auth from session cookies to JWT" --strategy weighted
-```
+MultiHead adds:
+- **Multiple passes** — cross-check outputs across heads
+- **Verification** — consensus voting, reflection loops, process reward models
+- **Persistent memory** — claims survive across sessions with lifecycle tracking
+- **Coordination** — route work to the right specialist, not one model doing everything
 
-```
-Discovering agents... found 3 active sessions:
-  • auth-agent (~/repos/auth-service/)
-  • api-agent (~/repos/api-gateway/)
-  • frontend-agent (~/repos/web-client/)
-
-Posting task to knowledge store... CLM_A1B2C3
-Waiting for proposals...
-
-Proposal from auth-agent (12s):
-  "1. Add JWT signing endpoint  2. Migrate session store  3. Add token refresh"
-
-Proposal from api-agent (18s):
-  "1. Update middleware to validate JWT  2. Remove cookie parsing  3. Add token forwarding"
-
-Proposal from frontend-agent (22s):
-  "1. Replace cookie auth with Bearer header  2. Add refresh logic  3. Update login flow"
-
-Running consensus (weighted by confidence)...
-  auth-agent:      0.92 confidence  ← winner (owns the auth domain)
-  api-agent:       0.88 confidence
-  frontend-agent:  0.85 confidence
-
-Assigning work:
-  auth-agent     → JWT signing, session migration, token refresh
-  api-agent      → middleware update, header forwarding
-  frontend-agent → Bearer header, login flow, refresh UI
-```
-
-Each agent executes in their own repo. Results flow back through the knowledge store. If `api-agent` needs to know the JWT signing algorithm, it queries the knowledge base — `auth-agent` already deposited it.
+It's the difference between asking one person to do everything and running a coordinated team.
 
 ---
 
-### The Knowledge Loop
+## Advanced Modes and Ecosystem
 
-```
-You work (code, conversations, decisions)
-        ↓
-Night Shift extracts knowledge
-        ↓
-Fusion verifies across independent sources
-        ↓
-Knowledge store tracks verified truth
-        ↓
-Briefing feeds it back when you edit files
-```
-
-This is how specialists compound value instead of starting over every run.
+Everything below extends the core system. The knowledge layer, briefings, and verification work without any of this.
 
 ---
 
-### Why Not Existing Frameworks?
+### Heads and Adapters
 
-| Framework | Good at | Missing |
-|-----------|---------|---------|
-| LangGraph | Orchestration + state | Persistent specialist knowledge |
-| CrewAI | Team mental model | Verified knowledge accumulation |
-| AutoGen | Multi-agent interaction | Durable memory + verification |
-| **MultiHead** | **Persistent specialists + verified knowledge** | — |
-
----
-
-### System Components
-
-**Heads and Adapters** — A head is a specialist. An adapter is how it connects to its backend. Three lines of YAML per head, any backend:
+A **head** is a specialist — anything that can do work. An **adapter** is how it connects to its backend:
 
 ```yaml
-# Local model via Ollama
 - head_id: devstral
   adapter: ollama
   model: "devstral-small-2:24b"
-  kind: llm
 
-# Cloud API
-- head_id: gpt4o
-  adapter: openai
-  model: "gpt-4o"
-  kind: llm
-  gpu_required: false
-
-# Claude as a native head
 - head_id: claude-sonnet
   adapter: claude
   model: "claude-sonnet-4-6"
-  kind: llm
   gpu_required: false
 ```
 
-| Adapter | Backend | GPU | Notes |
-|---------|---------|-----|-------|
-| `ollama` | Ollama server | Optional | Easiest setup. Wide model library. |
-| `transformers` | HuggingFace | Yes | Direct GPU control. 4-bit/8-bit quantization. |
-| `vllm` | vLLM server | Yes | High throughput. Sleep/wake for fast swapping. |
-| `openai` | OpenAI API | No | GPT-4o, GPT-4.1, batch API (50% cheaper). |
-| `anthropic` | Anthropic API | No | Claude models, batch API. |
-| `claude` | Claude CLI | No | Claude Code as a head. |
-| `claude_agent_sdk` | Claude Agent SDK | No | Claude with native tool use and session resume. |
-| `mock` | In-memory | No | Testing. No real inference. |
-| `acp` | Agent Communication Protocol | No | Multi-agent coordination, task queuing, trust scoring. |
+| Adapter | Backend | Notes |
+|---------|---------|-------|
+| `ollama` | Ollama server | Easiest setup. Wide model library. |
+| `transformers` | HuggingFace | Direct GPU. 4-bit/8-bit quantization. |
+| `vllm` | vLLM server | High throughput. Sleep/wake. |
+| `openai` | OpenAI API | Batch API (50% cheaper). |
+| `anthropic` | Anthropic API | Claude models, batch API. |
+| `claude` | Claude CLI | Claude Code as a head (uses your subscription). |
+| `claude_agent_sdk` | Claude Agent SDK | Claude with native tool use. |
+| `acp` | Agent Communication Protocol | Multi-agent coordination. |
 
-**Knowledge Store** — Verified, evolving facts with lifecycle: proposed → corroborated → stale → superseded. Every claim tracks its source, confidence, and evidence.
+### Distributed Solve
 
-**Night Shift** — 26-stage pipeline that runs nightly. Harvests from conversations, code, git, and CI. Cross-checks independent sources. Resolves contradictions or flags them for review.
+Multiple agents propose plans, consensus picks the winner, work is assigned by domain expertise. All coordination happens through the knowledge store.
 
-**Consensus** — Multiple heads vote on the same question. Used automatically during task decomposition — multiple heads propose plans, consensus picks the best one.
+### Night Shift
 
-**Decomposition** — Complex goals become parallel DAGs of atomic steps. The decomposer infers dependencies from file access patterns and runs independent steps concurrently.
-
----
+26-stage pipeline. Harvests from conversations, code, git, CI. Cross-checks independent sources. Resolves contradictions or flags them for human review. Runs nightly.
 
 ### Ecosystem: BotVibes Marketplace
 
-[BotVibes](https://botvibes.io) is infrastructure for the agent economy. Agents don't call APIs — they trade results. MultiHead plugs directly into this marketplace.
-
-**Sell capabilities you have:**
-
-```bash
-multihead marketplace publish \
-  --capability "object_detection" \
-  --model yolo-v8-custom \
-  --price 0.02
-```
-
-**Buy capabilities you don't:**
-
-```bash
-multihead marketplace procure \
-  --capability "text_translation" \
-  --payload "Translate API docs to Japanese" \
-  --max-price 0.50
-```
-
-[BotVibes](https://botvibes.io) handles discovery, bidding, escrow, and trust scoring. Your agents earn money doing what they're good at — and buy capabilities they don't have from agents who do.
+[BotVibes](https://botvibes.io) is infrastructure for the agent economy. Your agents sell capabilities they have and buy capabilities they don't. MultiHead handles execution — [BotVibes](https://botvibes.io) handles discovery, bidding, escrow, and trust.
 
 #### OpenClaw Integration
 
-*Under development.*
+*Under development.* [OpenClaw](https://github.com/clawctl/openclaw) agents can participate as heads in MultiHead.
 
-[OpenClaw](https://github.com/clawctl/openclaw) agents can participate as heads in MultiHead. A claw is a claw, a head is a head — together they form a multi-agent system where each specialist contributes what it's best at.
+#### AutoResearch
 
-#### AutoResearch — Codebase-Aware Local Agents
-
-*Under development.*
-
-[AutoResearch](https://github.com/Axsar/autoresearch) enables local agents that deeply understand your codebase. Combined with MultiHead's knowledge store, this creates local agents that know your code AND remember what they've learned across sessions.
+*Under development.* [AutoResearch](https://github.com/Axsar/autoresearch) enables local agents that deeply understand your codebase.
 
 ---
 
@@ -427,48 +288,16 @@ multihead marketplace procure \
 | Router behavior | `router/_scoring.py` |
 | Models/heads | `config/heads.yaml` |
 
-Start here → **docs/customization-guide.md**
-
 ---
 
 ## What This Is NOT
 
-- Not a chatbot
+- Not a chatbot or CLI you switch to
 - Not instant AI magic
-- Not pre-trained on your domain by default
+- Not pre-trained on your domain
 - Not a managed service
 
-You bring the code, context, and workflow. MultiHead helps specialists learn that world over time.
-
----
-
-## Architecture
-
-<details>
-<summary>Text version (for screen readers and bots)</summary>
-
-```
-Task Input
-    ↓
-MultiHead OS (Routing · Orchestration · Knowledge)
-    ↓
-┌───────────┬───────────────┬──────────────┐
-│ Auth Agent│ Payments Agent│ Infra Agent  │
-│ /auth     │ /payments     │ /infra       │
-│ JWT,tokens│ billing,hooks │ deploy, CI/CD│
-└─────┬─────┴───────┬───────┴──────┬───────┘
-      │             │              │
-      └─── Claims & Context ───────┘
-                    ↓
-      ┌─────────────┴─────────────┐
-      │ Knowledge    │ Consensus  │
-      │ Store        │ Engine     │
-      │ (verified    │ (multi-    │
-      │  claims +    │  agent     │
-      │  evidence)   │  verify)   │
-      └──────────────┴────────────┘
-```
-</details>
+You bring your agent, your code, your workflow. MultiHead adds the knowledge layer.
 
 ---
 
@@ -483,5 +312,5 @@ MIT
 - [Hello World](docs/hello-world.md) — 5-minute quickstart
 - [Customization Guide](docs/customization-guide.md) — make it yours
 - [Architecture](docs/repo-structure.md) — full codebase map
-- [All Examples](docs/examples.md) — consensus, chat/shell, night shift details, and more
+- [All Examples](docs/examples.md) — consensus, shell, night shift details, and more
 - [BotVibes](https://botvibes.io) — marketplace for capability trading
