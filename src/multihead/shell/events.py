@@ -109,7 +109,12 @@ class EventsMixin:
             # Skip monitoring noise (marketplace-activity-loop) — display only
             if auto_handle and event.auto_actionable:
                 requester = event.detail.get("requester", "")
+                # Skip noise — these don't need LLM processing
                 if requester == "marketplace-activity-loop":
+                    continue
+                # Edit tracking is just a notification for nightshift — don't burn brain cycles
+                if event.event_type == "collab_request" and "post-edit-track" in event.summary:
+                    self._tui_print(f"[dim]  edit tracked: {event.summary.split('File ')[-1].split(' was')[0] if 'File ' in event.summary else event.summary[:60]}[/dim]")
                     continue
                 await self._handle_event_auto(event, session_id)
 
