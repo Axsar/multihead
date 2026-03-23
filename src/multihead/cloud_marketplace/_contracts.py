@@ -136,6 +136,11 @@ class ContractMixin:
                 continue
             if self._failed_contracts.get(contract_id, 0) >= _MAX_CONTRACT_RETRIES:
                 continue
+            # Also check partial matches (claim keys may store short or full IDs)
+            if any(contract_id.startswith(fid) or fid.startswith(contract_id)
+                   for fid in self._failed_contracts
+                   if self._failed_contracts[fid] >= _MAX_CONTRACT_RETRIES):
+                continue
 
             if len(self._active_contracts) >= max_contracts:
                 break
