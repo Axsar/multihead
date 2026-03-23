@@ -22,6 +22,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from multihead.subprocess_utils import no_window_flags
+
 logger = logging.getLogger(__name__)
 
 
@@ -243,7 +245,8 @@ def run_and_extract(
         args.extend(extra_args)
 
     try:
-        result = subprocess.run(args, capture_output=True, text=True, timeout=600)
+        result = subprocess.run(args, capture_output=True, text=True, timeout=600,
+                                creationflags=no_window_flags())
         claims = extract_from_junit_xml(xml_path)
 
         # Also parse stdout for any extra info

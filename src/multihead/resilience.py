@@ -6,6 +6,8 @@ import shutil
 import time
 from typing import Any
 
+from multihead.subprocess_utils import no_window_flags
+
 
 # ---------------------------------------------------------------------------
 # Circuit Breaker
@@ -134,6 +136,7 @@ class ResourceMonitor:
                 capture_output=True,
                 text=True,
                 timeout=5,
+                creationflags=no_window_flags(),
             )
             if result.returncode == 0:
                 parts = result.stdout.strip().split(",")

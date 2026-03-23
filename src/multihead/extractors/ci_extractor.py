@@ -17,6 +17,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from multihead.subprocess_utils import no_window_flags
+
 logger = logging.getLogger(__name__)
 
 
@@ -38,6 +40,7 @@ def extract_ci_runs(
             ["gh", "api", f"repos/{owner}/{repo}/actions/runs",
              "--jq", f".workflow_runs[:{limit}]"],
             capture_output=True, text=True, timeout=30,
+            creationflags=no_window_flags(),
         )
         if result.returncode != 0:
             logger.error("gh api failed: %s", result.stderr)
@@ -124,6 +127,7 @@ def _extract_job_results(
             ["gh", "api", f"repos/{owner}/{repo}/actions/runs/{run_id}/jobs",
              "--jq", ".jobs"],
             capture_output=True, text=True, timeout=15,
+            creationflags=no_window_flags(),
         )
         if result.returncode != 0:
             return []

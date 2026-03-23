@@ -12,6 +12,7 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any
 
+from multihead.subprocess_utils import no_window_flags
 from .models import StepExecutionResult
 
 logger = logging.getLogger(__name__)
@@ -213,6 +214,7 @@ class ClaudeSessionStrategy(ExecutionStrategy):
                     cwd=self.work_dir,
                     timeout=timeout or self.subprocess_timeout,
                     env=env,
+                    creationflags=no_window_flags(),
                 ),
             )
         except subprocess.TimeoutExpired:

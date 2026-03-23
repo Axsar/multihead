@@ -33,6 +33,7 @@ from multihead.knowledge_models import (
 )
 from multihead.models import new_id
 from multihead.narrative.confidence import ConfidenceCalibrator, SourcePriority
+from multihead.subprocess_utils import no_window_flags
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -98,6 +99,7 @@ class GitExtractor:
         try:
             result = subprocess.run(
                 log_args, capture_output=True, text=True, timeout=30,
+                creationflags=no_window_flags(),
             )
             if result.returncode != 0:
                 logger.error("git log failed: %s", result.stderr)
@@ -340,6 +342,7 @@ class GitExtractor:
             result = subprocess.run(
                 ["git", "-C", str(self.repo_path), "diff", "--numstat", f"{commit_hash}~1", commit_hash],
                 capture_output=True, text=True, timeout=15,
+                creationflags=no_window_flags(),
             )
             if result.returncode != 0:
                 return []
@@ -370,6 +373,7 @@ class GitExtractor:
             result = subprocess.run(
                 ["git", "-C", str(self.repo_path), "diff", f"{commit_hash}~1", commit_hash, "--", file_path],
                 capture_output=True, text=True, timeout=15,
+                creationflags=no_window_flags(),
             )
             if result.returncode != 0:
                 return ""

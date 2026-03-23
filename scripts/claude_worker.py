@@ -32,6 +32,8 @@ from datetime import datetime
 
 import httpx
 
+from multihead.subprocess_utils import no_window_flags
+
 logging.basicConfig(
     level=logging.INFO,
     format="[worker] %(asctime)s %(levelname)s %(message)s",
@@ -376,6 +378,7 @@ class ClaudeWorker:
                 cwd=CLAUDE_WORK_DIR,
                 timeout=SUBPROCESS_TIMEOUT,
                 env=env,
+                creationflags=no_window_flags(),
             )
         except subprocess.TimeoutExpired:
             elapsed = time.monotonic() - start
@@ -458,6 +461,7 @@ class ClaudeWorker:
             check = subprocess.run(
                 ["tmux", "has-session", "-t", self.tmux_target],
                 capture_output=True, timeout=5,
+                creationflags=no_window_flags(),
             )
             if check.returncode != 0:
                 return {"error": f"tmux session '{self.tmux_target}' not found. "
@@ -467,6 +471,7 @@ class ClaudeWorker:
             subprocess.run(
                 ["tmux", "send-keys", "-t", self.tmux_target, message, "Enter"],
                 check=True, timeout=5,
+                creationflags=no_window_flags(),
             )
             return {"result": f"Sent to tmux session '{self.tmux_target}'", "mode": "interactive"}
 

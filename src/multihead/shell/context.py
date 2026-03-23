@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from multihead.subprocess_utils import no_window_flags
 from .prompts import SHELL_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
@@ -115,6 +116,7 @@ class ContextMixin:
             repo_root = subprocess.run(
                 ["git", "rev-parse", "--show-toplevel"],
                 capture_output=True, text=True, timeout=5,
+                creationflags=no_window_flags(),
             ).stdout.strip()
         except Exception:
             repo_root = ""
@@ -127,6 +129,7 @@ class ContextMixin:
                 ["git", "branch", "--show-current"],
                 capture_output=True, text=True, timeout=5,
                 cwd=repo_root,
+                creationflags=no_window_flags(),
             ).stdout.strip()
         except Exception:
             branch = "unknown"
@@ -138,6 +141,7 @@ class ContextMixin:
             top_items = subprocess.run(
                 ["ls", "-1", repo_root],
                 capture_output=True, text=True, timeout=5,
+                creationflags=no_window_flags(),
             ).stdout.strip()
             if top_items:
                 parts.append(f"\n**Top-level**:\n```\n{top_items}\n```")
@@ -151,6 +155,7 @@ class ContextMixin:
                 result = subprocess.run(
                     ["find", str(src_dir), "-type", "f", "-name", "*.py"],
                     capture_output=True, text=True, timeout=5,
+                    creationflags=no_window_flags(),
                 )
                 files = result.stdout.strip().splitlines()
                 # Show relative paths, limit to 40 files
@@ -169,6 +174,7 @@ class ContextMixin:
                 ["git", "log", "--oneline", "-10"],
                 capture_output=True, text=True, timeout=5,
                 cwd=repo_root,
+                creationflags=no_window_flags(),
             ).stdout.strip()
             if log:
                 parts.append(f"\n**Recent commits**:\n```\n{log}\n```")

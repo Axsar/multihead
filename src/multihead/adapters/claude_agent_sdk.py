@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -25,6 +26,28 @@ from .base import HeadAdapter
 #   If you need API billing, set api_key in the head's extra config instead.
 os.environ.pop("CLAUDECODE", None)
 os.environ.pop("ANTHROPIC_API_KEY", None)
+
+# ---------------------------------------------------------------------------
+# Monkey-patch anyio.open_process to suppress console windows on Windows.
+# The Claude Agent SDK spawns subprocesses via anyio, which does not pass
+# CREATE_NO_WINDOW by default. This causes popup cmd windows during Night
+# Shift and other headless operations.
+# ---------------------------------------------------------------------------
+if sys.platform == "win32":
+    import subprocess as _subprocess
+
+    try:
+        import anyio as _anyio
+
+        _original_open_process = _anyio.open_process
+
+        async def _patched_open_process(*args: Any, **kwargs: Any) -> Any:
+            kwargs.setdefault("creationflags", _subprocess.CREATE_NO_WINDOW)
+            return await _original_open_process(*args, **kwargs)
+
+        _anyio.open_process = _patched_open_process  # type: ignore[assignment]
+    except ImportError:
+        pass  # anyio not installed — SDK won't work either
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +100,7 @@ class ClaudeAgentSDKAdapter(HeadAdapter):
         extra = manifest.extra or {}
 
         self._model = extra.get("model") or manifest.model or os.environ.get(
-            "CLAUDE_MODEL", "claude-opus-4-6"
+            "CLAUDE_MODEL", "claude-sonnet-4-6"
         )
         self._max_turns = extra.get("max_turns", _DEFAULT_MAX_TURNS)
         self._max_budget = extra.get("max_budget_usd", _DEFAULT_MAX_BUDGET_USD)

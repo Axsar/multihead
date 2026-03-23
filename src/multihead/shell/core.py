@@ -16,6 +16,7 @@ from ..conversation_context import ConversationContext
 from ..event_watcher import EventWatcher
 from ..service_manager import ServiceManager
 from ..shell_pipeline import AGENT_ID, SELF_IDENTITIES, ShellPipeline
+from ..subprocess_utils import no_window_flags
 
 from .brain import BrainMixin
 from .context import ContextMixin
@@ -161,6 +162,7 @@ class Shell(
             try:
                 result = subprocess.run(
                     cmd, capture_output=True, text=True, timeout=5,
+                    creationflags=no_window_flags(),
                 )
                 meta[key] = result.stdout.strip() if result.returncode == 0 else ""
             except Exception:

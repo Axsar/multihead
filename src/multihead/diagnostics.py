@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from multihead.subprocess_utils import no_window_flags
+
 
 @dataclass
 class DiagnosticResult:
@@ -115,6 +117,7 @@ class Diagnostics:
             import subprocess
             result = subprocess.run(
                 ["ollama", "list"], capture_output=True, text=True, timeout=10,
+                creationflags=no_window_flags(),
             )
             if result.returncode == 0:
                 models = [l.split()[0] for l in result.stdout.strip().split("\n")[1:] if l.strip()]
