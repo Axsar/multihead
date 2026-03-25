@@ -7,8 +7,11 @@ from multihead.subprocess_utils import no_window_flags
 
 
 def test_no_window_flags_windows():
-    with patch.object(sys, "platform", "win32"):
-        assert no_window_flags() == subprocess.CREATE_NO_WINDOW
+    # CREATE_NO_WINDOW only exists on Windows; mock it if missing
+    flag = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+    with patch.object(sys, "platform", "win32"), \
+         patch.object(subprocess, "CREATE_NO_WINDOW", flag, create=True):
+        assert no_window_flags() == flag
 
 
 def test_no_window_flags_non_windows():
