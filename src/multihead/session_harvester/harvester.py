@@ -9,6 +9,7 @@ import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any
 
 from .evolution import save_snapshot, track_evolution
@@ -94,7 +95,7 @@ class SessionHarvester:
     # Harvesting
     # ------------------------------------------------------------------
 
-    def harvest_all(self, on_progress=None) -> HarvestResult:
+    def harvest_all(self, on_progress: Callable[[dict[str, Any]], None] | None = None) -> HarvestResult:
         """Full scan + harvest cycle.
 
         Args:

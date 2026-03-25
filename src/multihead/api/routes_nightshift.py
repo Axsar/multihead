@@ -6,8 +6,7 @@ import asyncio
 from collections import deque
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
 
 from multihead.models import HeadState
 
@@ -39,9 +38,9 @@ async def trigger_nightshift(
         for info in states.values()
     )
     if not has_active:
-        return JSONResponse(
+        raise HTTPException(
             status_code=400,
-            content={"error": "No active heads — wake a head before running Night Shift"},
+            detail="No active heads — wake a head before running Night Shift",
         )
 
     async with _nightshift_lock:

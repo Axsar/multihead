@@ -271,20 +271,18 @@ class EarlyStagesMixin:
         }
 
     def _make_chunk_progress_cb(self, stage_name: str, chunks: list):
-        """Build a callback that emits file_start/file_done/chunk_progress events."""
-        total = len(chunks)
+        """Build a callback that emits chunk_progress events.
+
+        The callback receives (chunk_index, chunk_total) from the extractor.
+        Note: chunk_index may not correspond 1:1 to entries in *chunks*
+        (e.g. TopicAssigner processes batches), so we only report the
+        numeric progress rather than indexing into the list.
+        """
 
         def _cb(chunk_index: int, chunk_total: int) -> None:
-            chunk = chunks[chunk_index] if chunk_index < len(chunks) else None
-            file_name = ""
-            source_project = ""
-            if chunk:
-                file_name = getattr(chunk, "record_id", "") or ""
-                source_project = getattr(chunk, "chunk_id", "").split("/")[0] if "/" in getattr(chunk, "chunk_id", "") else ""
             self._emit({
                 "event": "chunk_progress",
                 "stage": stage_name,
-                "file_name": file_name,
                 "chunk_index": chunk_index,
                 "chunk_total": chunk_total,
             })
