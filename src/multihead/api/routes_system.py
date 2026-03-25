@@ -12,6 +12,8 @@ import time
 
 from fastapi import APIRouter, Query, Request
 
+from multihead.subprocess_utils import no_window_flags
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -62,7 +64,7 @@ async def restart():
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     # Spawn a new server process directly (bypasses mh.cmd issues with nested shells)
     flags = (
-        subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+        subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP | no_window_flags()
         if sys.platform == "win32"
         else 0
     )

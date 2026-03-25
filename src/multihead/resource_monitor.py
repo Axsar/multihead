@@ -15,6 +15,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from multihead.subprocess_utils import no_window_flags
+
 logger = logging.getLogger(__name__)
 
 # Default history length (e.g., 60 samples at 10s interval = 10 min window)
@@ -111,6 +113,7 @@ class ResourceTracker:
                     ["nvidia-smi", "--query-gpu=memory.used,memory.free,memory.total",
                      "--format=csv,noheader,nounits"],
                     capture_output=True, text=True, timeout=5,
+                    creationflags=no_window_flags(),
                 )
                 if result.returncode == 0:
                     parts = result.stdout.strip().split(",")

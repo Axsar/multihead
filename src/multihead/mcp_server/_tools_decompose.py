@@ -6,6 +6,7 @@ import json
 
 import httpx
 
+from multihead.subprocess_utils import no_window_flags
 from ._core import _get_ks, _request, logger
 
 
@@ -181,6 +182,7 @@ async def _decompose_claude_p(goal: str, context: str = "") -> str:
             lambda: subprocess.run(
                 cmd, capture_output=True, text=True,
                 cwd=work_dir, timeout=300, env=env,
+                creationflags=no_window_flags(),
             ),
         )
     except subprocess.TimeoutExpired:

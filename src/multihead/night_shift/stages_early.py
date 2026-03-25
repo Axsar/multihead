@@ -146,7 +146,7 @@ class EarlyStagesMixin:
             knowledge_store=self.knowledge,
             data_dir=data_dir,
         )
-        result = harvester.harvest_all()
+        result = harvester.harvest_all(on_progress=self._emit)
 
         # 2. Conversation transcript harvest (new)
         conv_harvester = ConversationHarvester(
@@ -270,6 +270,25 @@ class EarlyStagesMixin:
             "metrics": {},
         }
 
+    def _make_chunk_progress_cb(self, stage_name: str, chunks: list):
+        """Build a callback that emits chunk_progress events.
+
+        The callback receives (chunk_index, chunk_total) from the extractor.
+        Note: chunk_index may not correspond 1:1 to entries in *chunks*
+        (e.g. TopicAssigner processes batches), so we only report the
+        numeric progress rather than indexing into the list.
+        """
+
+        def _cb(chunk_index: int, chunk_total: int) -> None:
+            self._emit({
+                "event": "chunk_progress",
+                "stage": stage_name,
+                "chunk_index": chunk_index,
+                "chunk_total": chunk_total,
+            })
+
+        return _cb
+
     async def _adapter_or_fn(self):
         """Return raw adapter for batch mode, generate closure otherwise."""
         if self.config.batch_mode:
@@ -278,11 +297,18 @@ class EarlyStagesMixin:
 
     async def _stage_entity_extraction(self, context: dict) -> dict:
         chunks = context.get("chunks", [])
+        self._emit({"event": "file_start", "stage": "entity_extraction",
+                     "file_name": "chunks", "file_index": 0, "file_total": 1,
+                     "source_project": "", "chunk_total": len(chunks)})
         result = await self.entity_extractor.extract(
             chunks, await self._adapter_or_fn(), concurrency=self.config.concurrency,
             checkpoint_dir=self.output_dir, stage_name="entity_extraction",
             batch_mode=self.config.batch_mode, no_wait=self.config.no_wait,
+            on_chunk_progress=self._make_chunk_progress_cb("entity_extraction", chunks),
         )
+        self._emit({"event": "file_done", "stage": "entity_extraction",
+                     "file_name": "chunks", "file_index": 0, "file_total": 1,
+                     "chunk_count": len(chunks), "results_count": len(result.items)})
         return {"entities": result.items, "metrics": result.metrics}
 
     async def _stage_topic_assignment(self, context: dict) -> dict:
@@ -309,19 +335,30 @@ class EarlyStagesMixin:
                     span_end=0,
                 ))
 
+        self._emit({"event": "file_start", "stage": "topic_assignment",
+                     "file_name": "chunks", "file_index": 0, "file_total": 1,
+                     "source_project": "", "chunk_total": len(chunks)})
         result = await self.topic_assigner.extract(
             chunks, await self._adapter_or_fn(), concurrency=self.config.concurrency,
             checkpoint_dir=self.output_dir, stage_name="topic_assignment",
             batch_mode=self.config.batch_mode, no_wait=self.config.no_wait,
+            on_chunk_progress=self._make_chunk_progress_cb("topic_assignment", chunks),
         )
+        self._emit({"event": "file_done", "stage": "topic_assignment",
+                     "file_name": "chunks", "file_index": 0, "file_total": 1,
+                     "chunk_count": len(chunks), "results_count": len(result.items)})
         return {"topics": result.items, "metrics": result.metrics}
 
     async def _stage_event_extraction(self, context: dict) -> dict:
         chunks = context.get("chunks", [])
+        self._emit({"event": "file_start", "stage": "event_extraction",
+                     "file_name": "chunks", "file_index": 0, "file_total": 1,
+                     "source_project": "", "chunk_total": len(chunks)})
         result = await self.event_extractor.extract(
             chunks, await self._adapter_or_fn(), concurrency=self.config.concurrency,
             checkpoint_dir=self.output_dir, stage_name="event_extraction",
             batch_mode=self.config.batch_mode, no_wait=self.config.no_wait,
+            on_chunk_progress=self._make_chunk_progress_cb("event_extraction", chunks),
         )
 
         # Build chunk_id → agent_folder lookup
@@ -369,6 +406,10 @@ class EarlyStagesMixin:
             except (ValueError, KeyError) as e:
                 logger.warning(f"Skipping malformed event: {e}")
 
+        self._emit({"event": "file_done", "stage": "event_extraction",
+                     "file_name": "chunks", "file_index": 0, "file_total": 1,
+                     "chunk_count": len(chunks), "results_count": len(result.items)})
+
         return {
             "extracted_events": result.items,
             "events_created": events_created,
@@ -377,11 +418,18 @@ class EarlyStagesMixin:
 
     async def _stage_claim_extraction(self, context: dict) -> dict:
         chunks = context.get("chunks", [])
+        self._emit({"event": "file_start", "stage": "claim_extraction",
+                     "file_name": "chunks", "file_index": 0, "file_total": 1,
+                     "source_project": "", "chunk_total": len(chunks)})
         result = await self.claim_extractor.extract(
             chunks, await self._adapter_or_fn(), concurrency=self.config.concurrency,
             checkpoint_dir=self.output_dir, stage_name="claim_extraction",
             batch_mode=self.config.batch_mode, no_wait=self.config.no_wait,
+            on_chunk_progress=self._make_chunk_progress_cb("claim_extraction", chunks),
         )
+        self._emit({"event": "file_done", "stage": "claim_extraction",
+                     "file_name": "chunks", "file_index": 0, "file_total": 1,
+                     "chunk_count": len(chunks), "results_count": len(result.items)})
 
         # Build chunk_id → (session_id, session_date) lookup for session dating
         chunk_session: dict[str, tuple[str, str]] = {}
