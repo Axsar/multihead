@@ -6,7 +6,16 @@ import asyncio
 import logging
 from typing import Any
 
-from .prompts import BRAIN_CLAUDE, BRAIN_LOCAL
+from .prompts import BRAIN_CLAUDE, BRAIN_DUAL, BRAIN_LOCAL
+
+# Fast brain system prompt — must be ≤50 tokens to keep latency low.
+# Instructs the local model to give a quick answer AND rewrite the query
+# for deeper downstream analysis.
+_FAST_BRAIN_SYSTEM_PROMPT = (
+    "You are a fast assistant. Respond briefly. "
+    "Also rewrite the user's query in one sentence for deeper analysis. "
+    "Format exactly:\nRESPONSE: <your brief answer>\nENRICHED: <rewritten query>"
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +48,8 @@ class BrainMixin:
         """
         if self._brain == BRAIN_CLAUDE:
             return self._chat_via_claude
+        if self._brain == BRAIN_DUAL:
+            return self._chat_dual_brain
         return self._chat_via_local
 
     async def _chat_via_local(
@@ -52,6 +63,73 @@ class BrainMixin:
         else:
             augmented = user_input
         return await self.ac.chat(session_id, augmented)
+
+    async def _chat_dual_brain(
+        self, session_id: str, user_input: str, knowledge_ctx: str = "",
+    ) -> str:
+        """Dual-brain: System 1 (fast local) enriches, System 2 (slow Claude) answers deep.
+
+        Flow:
+        1. Fast head generates a quick response + enriched query (~1-2s)
+        2. [quick] response is displayed immediately
+        3. Claude receives original + enriched context for deep analysis
+        4. [deep] response is returned for display by caller
+
+        Falls back to _chat_via_claude if fast head is unavailable.
+        """
+        if not self._claude_adapter:
+            return await self._chat_via_local(session_id, user_input, knowledge_ctx)
+
+        # --- Step 1: Fast brain call ---
+        fast_head_id = getattr(self, "_fast_head_id", None)
+        quick_response = ""
+        enriched_query = user_input  # fallback: pass original if fast head fails
+
+        if fast_head_id:
+            try:
+                fast_adapter = self.hm.get_adapter(fast_head_id)
+                fast_prompt = (
+                    f"{_FAST_BRAIN_SYSTEM_PROMPT}\n\nUser: {user_input}"
+                )
+                fast_result = await fast_adapter.generate(fast_prompt)
+                raw = fast_result.get("text", "") if isinstance(fast_result, dict) else str(fast_result)
+
+                # Parse RESPONSE: ... ENRICHED: ... format
+                resp_marker = "RESPONSE:"
+                enrich_marker = "ENRICHED:"
+                if resp_marker in raw and enrich_marker in raw:
+                    resp_start = raw.index(resp_marker) + len(resp_marker)
+                    enrich_start = raw.index(enrich_marker)
+                    quick_response = raw[resp_start:enrich_start].strip()
+                    enriched_query = raw[enrich_start + len(enrich_marker):].strip()
+                else:
+                    # Unparseable response — use it as-is for quick, keep original query
+                    quick_response = raw.strip()
+                    enriched_query = user_input
+
+            except Exception as e:
+                logger.warning("Fast brain failed, skipping enrichment: %s", e)
+                quick_response = ""
+                enriched_query = user_input
+
+        # --- Step 2: Display quick response ---
+        if quick_response:
+            self._tui_print(
+                f"[bold yellow]\\[quick][/bold yellow] {quick_response}\n"
+            )
+            if getattr(self, "_debug_enrichment", False):
+                self._tui_print(
+                    f"[dim]\\[enriched query] {enriched_query}[/dim]\n"
+                )
+
+        # --- Step 3: Slow brain (Claude) with enriched context ---
+        # Build enriched input: original question + fast-brain context
+        if enriched_query != user_input:
+            deep_input = f"{user_input}\n[Fast context: {enriched_query}]"
+        else:
+            deep_input = user_input
+
+        return await self._chat_via_claude(session_id, deep_input, knowledge_ctx)
 
     async def _chat_via_claude(
         self, session_id: str, user_input: str, knowledge_ctx: str = "",
@@ -184,20 +262,26 @@ class BrainMixin:
 
     async def switch_brain(self, mode: str) -> str:
         """Switch brain mode. Returns status message."""
-        if mode not in (BRAIN_LOCAL, BRAIN_CLAUDE):
-            return f"Unknown brain mode: {mode}. Use 'local' or 'claude'."
+        if mode not in (BRAIN_LOCAL, BRAIN_CLAUDE, BRAIN_DUAL):
+            return f"Unknown brain mode: {mode}. Use 'local', 'claude', or 'dual'."
 
         if mode == self._brain:
             return f"Already using {mode} brain."
 
-        if mode == BRAIN_CLAUDE:
+        if mode in (BRAIN_CLAUDE, BRAIN_DUAL):
             if not self._claude_adapter:
-                return "Claude adapter not configured. Start shell with --brain claude."
+                return "Claude adapter not configured. Start shell with --brain claude or --brain dual."
             ready = await self._ensure_claude_ready()
             if not ready:
                 return "Failed to switch to Claude brain (adapter not ready)."
-            self._brain = BRAIN_CLAUDE
+            self._brain = mode
             self._codebase_ctx_cache = None  # rebuild on brain switch
+            if mode == BRAIN_DUAL:
+                fast = getattr(self, "_fast_head_id", None) or "not configured"
+                return (
+                    f"Switched to dual brain (fast={fast} → slow=Claude SDK). "
+                    "Use /brain local or /brain claude to exit dual mode."
+                )
             return "Switched to Claude brain (Claude Agent SDK)."
         else:
             self._brain = BRAIN_LOCAL

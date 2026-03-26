@@ -1,0 +1,96 @@
+# Experiment Ratchet Recipe — AutoResearch-style automated experiment loop
+#
+# Inspired by Karpathy's AutoResearch. Agent proposes changes, tests them,
+# keeps improvements (git commit), reverts failures (git reset --hard).
+# All results logged to knowledge.db with structured failure metadata.
+#
+# Usage:
+#   multihead run experiment-ratchet \
+#     --input experiment_id=balloon-optimization \
+#     --input target_file=src/layout.py \
+#     --input test_command="python -m pytest tests/test_layout.py -x" \
+#     --input metric_name=overlap_count \
+#     --input metric_goal=minimize
+#
+# Or via shell: /run experiment-ratchet
+
+goal: "Run automated experiment ratchet — propose, test, keep-or-revert loop"
+
+inputs:
+  experiment_id: "experiment"
+  target_file: ""
+  test_command: ""
+  metric_name: "quality_score"
+  metric_goal: "maximize"
+  max_iterations: "20"
+
+budgets:
+  max_seconds: 7200  # 2 hours total
+  max_tokens: 100000
+
+steps:
+  - name: load_prior_knowledge
+    task_types: [semantic_reasoning]
+    prompt_template: |
+      Search knowledge.db for prior attempts on experiment '{experiment_id}'.
+      Summarize: what's been tried, what worked, what failed, and what the
+      current best result is.
+
+      Return JSON: {
+        "prior_attempts": N,
+        "best_known_metric": X,
+        "known_failures": ["...", "..."],
+        "suggested_direction": "..."
+      }
+
+  - name: propose_change
+    depends_on: [load_prior_knowledge]
+    task_types: [implementation, coding]
+    input_refs: [load_prior_knowledge]
+    enable_reflection: true
+    prompt_template: |
+      Based on prior knowledge:
+      {load_prior_knowledge}
+
+      Target file: {target_file}
+      Metric: {metric_name} (goal: {metric_goal})
+
+      Propose ONE small, targeted change. Simpler is better.
+      Return JSON: {
+        "description": "...",
+        "params": {},
+        "changes": [{"file": "...", "old": "...", "new": "..."}]
+      }
+
+  - name: apply_and_test
+    depends_on: [propose_change]
+    task_types: [testing, verification]
+    input_refs: [propose_change]
+    prompt_template: |
+      Apply the proposed change and run: {test_command}
+
+      Report the result:
+      Return JSON: {
+        "applied": true/false,
+        "test_passed": true/false,
+        "metric_value": X,
+        "error": "..." (if any)
+      }
+
+  - name: decide_keep_or_revert
+    depends_on: [apply_and_test]
+    task_types: [semantic_reasoning]
+    input_refs: [apply_and_test, propose_change]
+    prompt_template: |
+      Test result: {apply_and_test}
+      Proposal: {propose_change}
+
+      Decide: keep (git commit) or revert (git reset)?
+      If keeping, explain why the improvement matters.
+      If reverting, explain WHY it failed — this feeds future iterations.
+
+      Return JSON: {
+        "decision": "keep" | "revert",
+        "reason": "...",
+        "failure_category": "..." (if revert: oom|regression|no_effect|wrong_direction|crash)
+      }

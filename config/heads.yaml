@@ -46,6 +46,32 @@ heads:
     kind: llm
     gpu_required: false
 
+  # --- Fast brain candidates for dual-brain mode (System 1 — quick + enrichment) ---
+  # Use with: multihead shell --brain dual --fast-head fast-0.8b
+  - head_id: fast-0.8b
+    name: Qwen3.5 0.8B Fast
+    adapter: transformers
+    model: Qwen/Qwen3.5-0.8B
+    kind: llm
+    gpu_required: true
+    vram_hint_mb: 2000
+
+  - head_id: fast-2b
+    name: Qwen3.5 2B Fast
+    adapter: transformers
+    model: Qwen/Qwen3.5-2B
+    kind: llm
+    gpu_required: true
+    vram_hint_mb: 5000
+
+  - head_id: fast-4b
+    name: Qwen3.5 4B Fast
+    adapter: transformers
+    model: Qwen/Qwen3.5-4B
+    kind: llm
+    gpu_required: true
+    vram_hint_mb: 9500
+
   # --- Uncomment if you have an OpenAI API key ---
   # - head_id: openai-gpt4o
   #   name: GPT-4o Mini

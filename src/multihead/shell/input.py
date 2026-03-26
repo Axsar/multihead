@@ -18,7 +18,7 @@ from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.layout.margins import ScrollbarMargin
 from prompt_toolkit.widgets import TextArea
 
-from .prompts import BRAIN_CLAUDE, _SLASH_COMMANDS
+from .prompts import BRAIN_CLAUDE, BRAIN_DUAL, _SLASH_COMMANDS
 from .tui import _OutputPane
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,10 @@ class InputMixin:
 
     def _get_prompt_text(self) -> str:
         """Build prompt string showing active brain/head."""
-        if self._brain == BRAIN_CLAUDE:
+        if self._brain == BRAIN_DUAL:
+            fast = getattr(self, "_fast_head_id", None) or "fast"
+            label = f"[dual:{fast}→claude]"
+        elif self._brain == BRAIN_CLAUDE:
             label = "[claude-sdk]"
         else:
             active = self.hm.active_head if self.hm else None
@@ -293,11 +296,12 @@ class InputMixin:
 
         # Route through pipeline or direct to brain
         _pre_k_hits = self.pipeline._stats.get("knowledge_hits", 0) if self.pipeline else 0
-        _default_status = (
-            "Waiting for Claude..."
-            if self._brain == BRAIN_CLAUDE
-            else "Thinking..."
-        )
+        if self._brain == BRAIN_CLAUDE:
+            _default_status = "Waiting for Claude..."
+        elif self._brain == BRAIN_DUAL:
+            _default_status = "Fast brain thinking..."
+        else:
+            _default_status = "Thinking..."
         self._set_status(_default_status)
 
         try:
@@ -308,6 +312,8 @@ class InputMixin:
                         user_input, brain_fn, session_id,
                         on_status=self._set_status,
                     )
+                elif self._brain == BRAIN_DUAL:
+                    response = await self._chat_dual_brain(session_id, user_input)
                 elif self._brain == BRAIN_CLAUDE:
                     response = await self._chat_via_claude(session_id, user_input)
                 else:

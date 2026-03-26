@@ -24,7 +24,7 @@ from .deprecated import DeprecatedMixin
 from .display import DisplayMixin
 from .events import EventsMixin
 from .input import InputMixin
-from .prompts import BRAIN_CLAUDE, BRAIN_LOCAL
+from .prompts import BRAIN_CLAUDE, BRAIN_DUAL, BRAIN_LOCAL
 from .tui import _OutputPane, _TUILogHandler
 
 logger = logging.getLogger(__name__)
@@ -70,6 +70,8 @@ class Shell(
         pipeline: ShellPipeline | None = None,
         service_manager: ServiceManager | None = None,
         event_watcher: EventWatcher | None = None,
+        fast_head: str | None = None,
+        debug_enrichment: bool = False,
     ) -> None:
         self.ac = agentic_core
         self.hm = head_manager
@@ -93,11 +95,14 @@ class Shell(
             max_recent_chars=getattr(conv_cfg, "max_recent_chars", 4000),
         )
 
-        # Brain mode: "local" (AgenticCore) or "claude" (Claude Agent SDK)
-        self._brain = brain if brain in (BRAIN_LOCAL, BRAIN_CLAUDE) else BRAIN_LOCAL
+        # Brain mode: "local", "claude", or "dual" (System 1 + System 2)
+        self._brain = brain if brain in (BRAIN_LOCAL, BRAIN_CLAUDE, BRAIN_DUAL) else BRAIN_LOCAL
         self._claude_adapter = claude_adapter
         self._claude_conversation_id = "shell-default"
         self._codebase_ctx_cache: str | None = None
+        # Dual brain config
+        self._fast_head_id: str | None = fast_head  # Ollama head for fast brain
+        self._debug_enrichment: bool = debug_enrichment  # print enriched query
 
         # Verbose output: show model, cost, turns, etc. after each response
         self._verbose = False

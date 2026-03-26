@@ -117,6 +117,9 @@ from ._mesh import (
 # --- Recipes ---
 from ._recipes import recipes, recipes_learn
 
+# --- Ratchet (AutoResearch-style experiment loop) ---
+from ._ratchet import ratchet
+
 __all__ = [
     # Core
     "main",
@@ -197,6 +200,8 @@ __all__ = [
     # Recipes
     "recipes",
     "recipes_learn",
+    # Ratchet
+    "ratchet",
     # Helpers
     "console",
     "logger",

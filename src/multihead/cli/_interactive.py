@@ -155,12 +155,17 @@ def chat(ctx, head_id):
 @click.option("--head", "head_id", default=None, help="Head ID for the core brain")
 @click.option("--session", "session_id", default=None, help="Resume a previous session")
 @click.option("--no-banner", is_flag=True, default=False, help="Skip the startup banner")
-@click.option("--brain", "brain_mode", default="local", type=click.Choice(["local", "claude"]),
-              help="Brain mode: local (GPU) or claude (Agent SDK)")
+@click.option("--brain", "brain_mode", default="local",
+              type=click.Choice(["local", "claude", "dual"]),
+              help="Brain mode: local (GPU), claude (Agent SDK), or dual (fast+slow)")
+@click.option("--fast-head", "fast_head", default=None,
+              help="Head ID for fast brain in dual mode (default: fast-llm)")
+@click.option("--debug-enrichment", "debug_enrichment", is_flag=True, default=False,
+              help="Print fast brain's enriched query before slow brain runs (dual mode only)")
 @click.option("--responsive", is_flag=True, default=False,
               help="Enable marketplace + auto-responder for reactive operation")
 @click.pass_context
-def shell(ctx, head_id, session_id, no_banner, brain_mode, responsive):
+def shell(ctx, head_id, session_id, no_banner, brain_mode, fast_head, debug_enrichment, responsive):
     """Interactive agent terminal with Rich UI and system management.
 
     Enhanced REPL with PLUR safety principles, head management commands,
@@ -395,6 +400,8 @@ def shell(ctx, head_id, session_id, no_banner, brain_mode, responsive):
         pipeline=pipeline,
         service_manager=svc_mgr,
         event_watcher=event_watcher,
+        fast_head=fast_head or "fast-llm",
+        debug_enrichment=debug_enrichment,
     )
     agent_shell._config_dir = settings.config_dir
 

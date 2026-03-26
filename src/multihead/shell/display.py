@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 
-from .prompts import BRAIN_CLAUDE, BRAIN_LOCAL
+from .prompts import BRAIN_CLAUDE, BRAIN_DUAL, BRAIN_LOCAL
 
 
 class DisplayMixin:
@@ -87,6 +87,12 @@ class DisplayMixin:
         """Display agent response with Rich formatting."""
         if not response:
             return
+        # Dual brain: deep response gets a [deep] label instead of assistant:
+        label = (
+            "[bold magenta]\\[deep][/bold magenta]"
+            if self._brain == BRAIN_DUAL
+            else "[green]assistant:[/green]"
+        )
         # If response looks like it has markdown, render it
         if any(marker in response for marker in ("```", "**", "##", "- ", "| ")):
             try:
@@ -94,10 +100,10 @@ class DisplayMixin:
                 self._tui_print(Markdown(response))
                 self._tui_print()
             except Exception:
-                self._tui_print(f"[green]assistant:[/green] {response}\n")
+                self._tui_print(f"{label} {response}\n")
         else:
             # Plain text fallback
-            self._tui_print(f"[green]assistant:[/green] {response}\n")
+            self._tui_print(f"{label} {response}\n")
 
         # Verbose metadata footer
         if self._verbose and self._last_meta:
@@ -201,7 +207,13 @@ class DisplayMixin:
             lines.append("  Mesh: [dim]no peers[/dim]")
 
         # Brain mode
-        if self._brain == BRAIN_CLAUDE:
+        if self._brain == BRAIN_DUAL:
+            fast = getattr(self, "_fast_head_id", None) or "fast-llm"
+            lines.append(
+                f"  Brain: [bold yellow]Dual[/bold yellow] "
+                f"([yellow]{fast}[/yellow] → [magenta]Claude SDK[/magenta])"
+            )
+        elif self._brain == BRAIN_CLAUDE:
             lines.append("  Brain: [bold magenta]Claude SDK[/bold magenta]")
         else:
             lines.append("  Brain: [bold blue]Local GPU[/bold blue]")

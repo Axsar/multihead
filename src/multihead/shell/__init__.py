@@ -20,6 +20,7 @@ All public names are re-exported here for backward compatibility.
 from .core import Shell
 from .prompts import (
     BRAIN_CLAUDE,
+    BRAIN_DUAL,
     BRAIN_LOCAL,
     SHELL_SYSTEM_PROMPT,
     _SLASH_COMMANDS,
@@ -28,6 +29,7 @@ from .tui import _OutputPane, _TUILogHandler, _ViewportControl
 
 __all__ = [
     "BRAIN_CLAUDE",
+    "BRAIN_DUAL",
     "BRAIN_LOCAL",
     "SHELL_SYSTEM_PROMPT",
     "Shell",

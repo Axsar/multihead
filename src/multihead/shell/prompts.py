@@ -5,6 +5,7 @@ from __future__ import annotations
 # Brain mode constants
 BRAIN_LOCAL = "local"
 BRAIN_CLAUDE = "claude"
+BRAIN_DUAL = "dual"  # System 1 (fast local) + System 2 (slow Claude) sequential pipeline
 
 # Slash commands for auto-complete
 _SLASH_COMMANDS = [
@@ -12,7 +13,7 @@ _SLASH_COMMANDS = [
     "/status", "/dashboard", "/dash", "/knowledge", "/session", "/sessions",
     "/mesh", "/spawn", "/ps", "/output", "/kill", "/brain", "/pipeline",
     "/services", "/collab", "/collab-respond", "/collab-ignore", "/model",
-    "/verbose", "/events", "/responsive", "/solve", "/resolve",
+    "/verbose", "/events", "/responsive", "/solve", "/resolve", "/ratchet",
 ]
 
 # ---------------------------------------------------------------------------
