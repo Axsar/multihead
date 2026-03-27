@@ -83,7 +83,6 @@ class BaseExtractor(abc.ABC):
         stage_name: str = "",
         batch_mode: bool = False,
         no_wait: bool = False,
-        on_chunk_progress: Callable[[int, int], None] | None = None,
     ) -> list[dict[str, Any] | Exception]:
         """Call generate for each prompt, optionally in parallel or batch.
 
@@ -210,8 +209,6 @@ class BaseExtractor(abc.ABC):
                     raise InterruptedError(
                         f"Shutdown at {idx}/{len(prompts)} in {stage_name or 'map_generate'}"
                     )
-                if on_chunk_progress:
-                    on_chunk_progress(idx, len(prompts))
                 try:
                     result = await BaseExtractor.call_generate(adapter, prompt)
                     results.append(result)

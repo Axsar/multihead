@@ -9,7 +9,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from multihead.subprocess_utils import no_window_flags
 from .models import AdapterStatus, HardwareProfile
 
 logger = logging.getLogger(__name__)
@@ -55,7 +54,6 @@ def detect_hardware() -> HardwareProfile:
             result = subprocess.run(
                 ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
                 capture_output=True, text=True, timeout=10,
-                creationflags=no_window_flags(),
             )
             if result.returncode == 0:
                 parts = result.stdout.strip().split(", ")
@@ -77,7 +75,6 @@ def check_adapters() -> AdapterStatus:
     try:
         result = subprocess.run(
             ["ollama", "list"], capture_output=True, text=True, timeout=10,
-            creationflags=no_window_flags(),
         )
         if result.returncode == 0:
             status.ollama_available = True

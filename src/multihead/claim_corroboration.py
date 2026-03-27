@@ -17,8 +17,6 @@ import re
 import subprocess
 from pathlib import Path
 
-from multihead.subprocess_utils import no_window_flags
-
 # Patterns to extract file paths from text
 _FILE_PATH_RE = re.compile(
     r'(?:^|[\s\'"`(])(/(?:mnt|home|tmp|usr|opt|var)[/\w._-]+(?:\.\w{1,10})?)',
@@ -73,7 +71,6 @@ def get_git_head_sha(repo_path: str = ".") -> str | None:
         result = subprocess.run(
             ["git", "-C", repo_path, "rev-parse", "HEAD"],
             capture_output=True, text=True, timeout=5,
-            creationflags=no_window_flags(),
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -106,7 +103,6 @@ def check_sha_staleness(
         result = subprocess.run(
             ["git", "-C", repo_path, "diff", source_sha, "HEAD", "--", file_path],
             capture_output=True, text=True, timeout=10,
-            creationflags=no_window_flags(),
         )
         if result.returncode != 0:
             return {"stale": False, "penalty": 0.0, "reason": "git_error"}

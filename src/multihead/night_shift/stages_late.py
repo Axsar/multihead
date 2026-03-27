@@ -15,7 +15,6 @@ from multihead.knowledge_models import (
     Link,
 )
 
-from multihead.subprocess_utils import no_window_flags
 from .models import _prov
 
 logger = logging.getLogger(__name__)
@@ -672,7 +671,6 @@ class LateStagesMixin:
                                 ["git", "diff", "--name-only", sha, "HEAD"],
                                 capture_output=True, text=True, timeout=10,
                                 cwd=repo_dir,
-                                creationflags=no_window_flags(),
                             )
                             if result.returncode != 0:
                                 sha_repo_cache[cache_key] = set()

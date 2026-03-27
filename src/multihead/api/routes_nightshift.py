@@ -6,9 +6,7 @@ import asyncio
 from collections import deque
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
-
-from multihead.models import HeadState
+from fastapi import APIRouter, BackgroundTasks, Query, Request
 
 router = APIRouter()
 
@@ -18,7 +16,7 @@ _nightshift_status: dict[str, Any] = {
     "running": False,
     "last_report": None,
     "current_stage": None,
-    "progress": deque(maxlen=5000),
+    "progress": deque(maxlen=100),
 }
 
 
@@ -30,25 +28,12 @@ async def trigger_nightshift(
     concurrency: int = Query(1, description="Parallel LLM calls per stage (1=sequential)"),
 ) -> dict[str, Any]:
     """Trigger a Night Shift run in the background."""
-    # Check for at least one active head before starting
-    head_manager = request.app.state.head_manager
-    states = head_manager.get_states()
-    has_active = any(
-        info.get("state") == HeadState.ACTIVE.value
-        for info in states.values()
-    )
-    if not has_active:
-        raise HTTPException(
-            status_code=400,
-            detail="No active heads — wake a head before running Night Shift",
-        )
-
     async with _nightshift_lock:
         if _nightshift_status["running"]:
             return {"status": "already_running"}
         _nightshift_status["running"] = True
         _nightshift_status["current_stage"] = None
-        _nightshift_status["progress"] = deque(maxlen=5000)
+        _nightshift_status["progress"] = deque(maxlen=100)
 
     night_shift = request.app.state.night_shift
     night_shift.config.concurrency = max(1, concurrency)

@@ -12,8 +12,6 @@ import re
 import subprocess
 from dataclasses import dataclass
 
-from multihead.subprocess_utils import no_window_flags
-
 logger = logging.getLogger(__name__)
 
 _GH_TIMEOUT = 30  # seconds
@@ -86,7 +84,6 @@ def infer_repo() -> str | None:
         result = subprocess.run(
             ["git", "remote", "get-url", "origin"],
             capture_output=True, text=True, timeout=10,
-            creationflags=no_window_flags(),
         )
         if result.returncode != 0:
             return None
@@ -123,7 +120,6 @@ def _run_gh(args: list[str], timeout: int = _GH_TIMEOUT) -> subprocess.Completed
     try:
         result = subprocess.run(
             cmd, capture_output=True, text=True, timeout=timeout,
-            creationflags=no_window_flags(),
         )
     except FileNotFoundError:
         raise RuntimeError(

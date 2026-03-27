@@ -42,7 +42,6 @@ class EntityExtractor(BaseExtractor):
             stage_name=kwargs.get("stage_name", ""),
             batch_mode=kwargs.get("batch_mode", False),
             no_wait=kwargs.get("no_wait", False),
-            on_chunk_progress=kwargs.get("on_chunk_progress"),
         )
 
         for chunk, resp in zip(chunks, responses):

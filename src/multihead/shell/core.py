@@ -16,7 +16,6 @@ from ..conversation_context import ConversationContext
 from ..event_watcher import EventWatcher
 from ..service_manager import ServiceManager
 from ..shell_pipeline import AGENT_ID, SELF_IDENTITIES, ShellPipeline
-from ..subprocess_utils import no_window_flags
 
 from .brain import BrainMixin
 from .context import ContextMixin
@@ -167,7 +166,6 @@ class Shell(
             try:
                 result = subprocess.run(
                     cmd, capture_output=True, text=True, timeout=5,
-                    creationflags=no_window_flags(),
                 )
                 meta[key] = result.stdout.strip() if result.returncode == 0 else ""
             except Exception:
@@ -204,11 +202,19 @@ class Shell(
         """Main entry point — builds TUI and runs until exit."""
         self._current_session_id = session_id
 
-        # Load Claude adapter eagerly if starting in claude mode
-        if self._brain == BRAIN_CLAUDE:
+        # Load Claude adapter eagerly if starting in claude or dual mode
+        if self._brain in (BRAIN_CLAUDE, BRAIN_DUAL):
             ready = await self._ensure_claude_ready()
             if not ready:
                 self._brain = BRAIN_LOCAL
+
+        # In dual mode, eagerly wake the fast head so it's ready for first query
+        if self._brain == BRAIN_DUAL and self._fast_head_id:
+            try:
+                await self.hm.wake_head(self._fast_head_id)
+                logger.info("Fast head '%s' loaded for dual brain", self._fast_head_id)
+            except Exception as e:
+                logger.warning("Failed to wake fast head '%s': %s", self._fast_head_id, e)
 
         # Auto-start configured services
         if self.service_manager:

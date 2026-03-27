@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -63,7 +62,7 @@ class ClaudeAgentSDKAdapter(HeadAdapter):
     for typed messages, streaming, session management, and hooks.
 
     Configuration via manifest.extra:
-        model: str          — Claude model (default: from env or "claude-sonnet-4-6")
+        model: str          — Claude model (default: from env or "claude-sonnet-4-20250514")
         max_turns: int      — Max agent turns per call (default: 25)
         max_budget_usd: float — Budget cap per call (default: 5.0)
         permission_mode: str — "bypassPermissions" | "acceptEdits" | "default"
@@ -73,40 +72,12 @@ class ClaudeAgentSDKAdapter(HeadAdapter):
         effort: str         — "low" | "medium" | "high" | "max"
     """
 
-    _anyio_patched = False
-
-    @classmethod
-    def _patch_anyio(cls) -> None:
-        """Monkey-patch anyio.open_process to suppress console windows on Windows.
-
-        The Claude Agent SDK spawns subprocesses via anyio, which does not pass
-        CREATE_NO_WINDOW by default. This causes popup cmd windows during Night
-        Shift and other headless operations. Only patches once per process.
-        """
-        if cls._anyio_patched or sys.platform != "win32":
-            return
-        try:
-            import anyio as _anyio
-            import subprocess as _subprocess
-
-            _original = _anyio.open_process
-
-            async def _patched(*args: Any, **kwargs: Any) -> Any:
-                kwargs.setdefault("creationflags", _subprocess.CREATE_NO_WINDOW)
-                return await _original(*args, **kwargs)
-
-            _anyio.open_process = _patched  # type: ignore[assignment]
-            cls._anyio_patched = True
-        except ImportError:
-            pass  # anyio not installed — SDK won't work either
-
     def __init__(self, manifest: HeadManifest) -> None:
         super().__init__(manifest)
-        self._patch_anyio()
         extra = manifest.extra or {}
 
         self._model = extra.get("model") or manifest.model or os.environ.get(
-            "CLAUDE_MODEL", "claude-sonnet-4-6"
+            "CLAUDE_MODEL", "claude-opus-4-6"
         )
         self._max_turns = extra.get("max_turns", _DEFAULT_MAX_TURNS)
         self._max_budget = extra.get("max_budget_usd", _DEFAULT_MAX_BUDGET_USD)

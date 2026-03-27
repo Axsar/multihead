@@ -9,7 +9,6 @@ import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from collections.abc import Callable
 from typing import Any
 
 from .evolution import save_snapshot, track_evolution
@@ -95,29 +94,16 @@ class SessionHarvester:
     # Harvesting
     # ------------------------------------------------------------------
 
-    def harvest_all(self, on_progress: Callable[[dict[str, Any]], None] | None = None) -> HarvestResult:
-        """Full scan + harvest cycle.
-
-        Args:
-            on_progress: Optional callback ``(event_dict) -> None`` for progress reporting.
-        """
+    def harvest_all(self) -> HarvestResult:
+        """Full scan + harvest cycle."""
         t0 = time.monotonic()
         result = HarvestResult()
         manifest = self.get_manifest()
 
         projects = self.scan_projects()
         result.projects_scanned = len(projects)
-        total = len(projects)
 
-        for i, project in enumerate(projects):
-            if on_progress:
-                on_progress({
-                    "event": "project_start",
-                    "project": project.name,
-                    "project_index": i,
-                    "project_total": total,
-                })
-            files_in_project = len(project.memory_files)
+        for project in projects:
             try:
                 harvested, evolutions = self._harvest_project(project, manifest)
                 if harvested > 0:
@@ -130,14 +116,6 @@ class SessionHarvester:
                 msg = f"{project.name}: {e}"
                 result.errors.append(msg)
                 logger.warning("Harvest error for %s: %s", project.name, e)
-            if on_progress:
-                on_progress({
-                    "event": "project_done",
-                    "project": project.name,
-                    "project_index": i,
-                    "project_total": total,
-                    "file_count": files_in_project,
-                })
 
         # Update manifest timestamp
         manifest["last_full_scan"] = datetime.now(timezone.utc).isoformat()
