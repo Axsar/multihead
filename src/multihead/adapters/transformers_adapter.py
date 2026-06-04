@@ -143,7 +143,17 @@ class TransformersAdapter(HeadAdapter):
         # Use chat template when available (required for Qwen3, etc.)
         tokenizer = self._tokenizer or self._processor
         if not skip_template and tokenizer is not None and hasattr(tokenizer, "apply_chat_template"):
-            messages = [{"role": "user", "content": prompt}]
+            # VLM with images: content must be a list including image placeholders
+            # so the chat template emits <|vision_start|><|image_pad|><|vision_end|>
+            # tokens that bind to the image features in the processor() call below.
+            images_for_template = kwargs.get("images")
+            if images_for_template and self._processor is not None:
+                content: Any = [{"type": "image"} for _ in images_for_template] + [
+                    {"type": "text", "text": prompt},
+                ]
+            else:
+                content = prompt
+            messages = [{"role": "user", "content": content}]
             template_kwargs: dict[str, Any] = {
                 "tokenize": False,
                 "add_generation_prompt": True,
