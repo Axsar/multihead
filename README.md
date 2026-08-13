@@ -1,3 +1,5 @@
+
+
 # MultiHead
 
 [![CI](https://github.com/Axsar/multihead/actions/workflows/test.yml/badge.svg)](https://github.com/Axsar/multihead/actions/workflows/test.yml)
@@ -110,6 +112,7 @@ Each cycle makes the system more accurate. Your agent doesn't start from scratch
 ```bash
 pip install -e .
 multihead init --auto
+multihead serve &
 ```
 
 Then use it from your existing agent, or try it directly:
